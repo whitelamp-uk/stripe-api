@@ -1,7 +1,11 @@
 <?php
-use Stripe\Stripe;
-use Stripe\PaymentIntent;
-class StripeApi {
+
+namespace Blotto\Stripe;
+
+use \Stripe\Stripe;
+use \Stripe\PaymentIntent;
+
+class PayApi {
 
     private  $connection;
     public   $constants = [
@@ -66,7 +70,7 @@ class StripeApi {
                 // Send confirmation SMS
                 if (STRIPE_CMPLN_PH) {
                     $step = 'Confirmation SMS';
-                    $sms        = new SMS ();
+                    $sms        = new \SMS ();
                     $details    = sms_message ();
                     $sms->send ($_POST['mobile'],$details['message'],$details['from']);
                 }
@@ -88,11 +92,11 @@ class StripeApi {
     }
 
     private function campaign_monitor ($ref,$tickets,$first_draw_close,$draws) {
-        $cm         = new CS_REST_Transactional_SmartEmail (
+        $cm         = new \CS_REST_Transactional_SmartEmail (
             CAMPAIGN_MONITOR_SMART_EMAIL_ID,
             array ('api_key' => CAMPAIGN_MONITOR_KEY)
         );
-        $first      = new DateTime ($first_draw_close);
+        $first      = new \DateTime ($first_draw_close);
         $first->add ('P1D');
         $first      = $first->format ('l jS F Y');
         $name       = str_replace (':','',$_POST['first_name']);
@@ -202,7 +206,7 @@ class StripeApi {
     }
 
     public function import ($from) {
-        $from               = new DateTime ($from);
+        $from               = new \DateTime ($from);
         $this->from         = $from->format ('Y-m-d');
         $this->execute (__DIR__.'/create_payment.sql');
         $this->output_mandates ();
@@ -321,7 +325,7 @@ class StripeApi {
     }
 
     private function sms_message ( ) {
-        $mysqli = new mysqli (STRIPE_DB_HOST,STRIPE_DB_USERNAME,STRIPE_DB_PASSWORD,STRIPE_DB_DATABASE);
+        $mysqli = new \mysqli (STRIPE_DB_HOST,STRIPE_DB_USERNAME,STRIPE_DB_PASSWORD,STRIPE_DB_DATABASE);
         if ($mysqli->connect_errno) {
             throw new \Exception ($mysqli->connecterror);
             return false;
@@ -357,7 +361,7 @@ class StripeApi {
             "email" => $email,
             "level" => STRIPE_EMAIL_VERIFY_LEVEL,
         );
-        $client = new SoapClient("https://webservices.data-8.co.uk/EmailValidation.asmx?WSDL");
+        $client = new \SoapClient ("https://webservices.data-8.co.uk/EmailValidation.asmx?WSDL");
         $result = $client->IsValid($params);
         if ($result->IsValidResult->Status->Success == false) {
             throw new \Exception ("Error trying to validate email: ".$result->Status->ErrorMessage);
@@ -396,13 +400,13 @@ class StripeApi {
             throw new \Exception ('Date of birth is required');
             return false;
         }
-        $dt             = new DateTime ($_POST['dob']);
+        $dt             = new \DateTime ($_POST['dob']);
         if (!$dt) {
             define ( 'STRIPE_GO', 'about');
             throw new \Exception ('Date of birth is not valid');
             return false;
         }
-        $now        = new DateTime ();
+        $now        = new \DateTime ();
         $years      = $dt->diff($now)->format ('%r%y');
         if ($years<18) {
             throw new \Exception ('You must be 18 or over to sign up');
@@ -465,7 +469,7 @@ class StripeApi {
         );
         $params['options']['Option'][] =  array("Name" => "UseMobileValidation", "Value" => false);
         $params['options']['Option'][] =  array("Name" => "UseLineValidation", "Value" => false);
-        $client = new SoapClient("https://webservices.data-8.co.uk/InternationalTelephoneValidation.asmx?WSDL");
+        $client = new \SoapClient ("https://webservices.data-8.co.uk/InternationalTelephoneValidation.asmx?WSDL");
         $result = $client->IsValid($params);
         if ($result->IsValidResult->Status->Success == false) {
             throw new \Exception ("Error trying to validate phone number: ".$result->Status->ErrorMessage);
