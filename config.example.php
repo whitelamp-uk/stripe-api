@@ -3,6 +3,7 @@
 // Organisation
 define ( 'BLOTTO_PAY_API_STRIPE',       '/some/stripe-api/PayApi.php'       );
 define ( 'BLOTTO_PAY_API_STRIPE_CLASS', '\Blotto\Stripe\PayApi'             );
+define ( 'STRIPE_DIR_STRIPE',           '/some/stripe-php-7.77.0'           );
 define ( 'STRIPE_ADMIN_EMAIL',          'stripe.support@my.biz'             );
 define ( 'STRIPE_ADMIN_PHONE',          '01 234 567 890'                    );
 define ( 'STRIPE_TERMS' ,                   'https://my.biz/terms'          );
