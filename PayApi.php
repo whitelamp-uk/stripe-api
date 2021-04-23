@@ -301,26 +301,46 @@ class PayApi {
               'metadata' => ['integration_check' => 'accept_a_payment'],
             ]);
             ?>
-            <form id="payment-form" data-secret="<?php echo $intent->client_secret ?>">
-              <div id="card-element">
-                <!-- Elements will create input elements here -->
-              </div>
 
-              <!-- We'll put the error messages in this element -->
-              <div id="card-errors" role="alert"></div>
 
-              <button id="card-button">Submit Payment</button>
+            <form id="payment-form">
+            <?php if (STRIPE_DEV_MODE) { ?>
+                <table>
+                <tr><td>Payment succeeds</td><td>4242 4242 4242 4242</td></tr>
+                <tr><td>Payment requires authentication</td><td>4000 0025 0000 3155</td></tr>
+                <tr><td>Payment is declined</td><td>4000 0000 0000 9995</td></tr>
+                </table>
+            <?php } ?>
+
+              <div id="card-element"><!--Stripe.js injects the Card Element--></div>
+              <button id="submit">
+                <div class="spinner hidden" id="spinner"></div>
+                <span id="button-text">Pay now</span>
+              </button>
+              <p id="card-error" role="alert"></p>
+              <p class="result-message hidden">
+                Payment succeeded, see the result in your
+                <a href="" target="_blank">Stripe dashboard.</a> Refresh the page to pay again.
+              </p>
             </form>
+
             <script type="text/javascript">
                 var stripe = Stripe('<?php echo STRIPE_PUBLIC_KEY ?>');
-                var elements = stripe.elements();
+                var clientSecret = "<?php echo $intent->client_secret ?>";
+                var purchase = {
+                  items: [{ id: "xl-tshirt" }]
+                };
+                <?php require "client.js"; ?>
+
+
+                /*var elements = stripe.elements();
                 var style = {
                   base: {
                     color: "#32325d",
                   }
                 };
                 var card = elements.create("card", { style: style });
-                card.mount("#card-element");
+                card.mount("#card-element");*/
             </script>
             <?php
         }
@@ -342,7 +362,7 @@ class PayApi {
             "username" => STRIPE_D8_USERNAME,
             "password" => STRIPE_D8_PASSWORD,
             "email" => $email,
-            "level" => STRIPE_EMAIL_VERIFY_LEVEL,
+            "level" => STRIPE_D8_EML_VERIFY_LEVEL,
         );
         $client = new \SoapClient ("https://webservices.data-8.co.uk/EmailValidation.asmx?WSDL");
         $result = $client->IsValid($params);

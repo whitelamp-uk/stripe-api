@@ -155,7 +155,7 @@
 
             <h3>GDPR Statement</h3>
 
-            <p>Your support makes our vital work possible.  We&#039;d love to keep in touch with you to tell you more about our work and how you can support it. We&#039;ll do this by the options you chose above and you can change these preferences at any time by calling or e-mailing us on <?php echo htmlspecialchars (STRIPE_ADMIN_TELEPHONE); ?> or <a href="mailto:<?php echo htmlspecialchars (STRIPE_ADMIN_EMAIL); ?>"><?php echo htmlspecialchars (STRIPE_ADMIN_EMAIL); ?></a></p>
+            <p>Your support makes our vital work possible.  We&#039;d love to keep in touch with you to tell you more about our work and how you can support it. We&#039;ll do this by the options you chose above and you can change these preferences at any time by calling or e-mailing us on <?php echo htmlspecialchars (STRIPE_ADMIN_PHONE); ?> or <a href="mailto:<?php echo htmlspecialchars (STRIPE_ADMIN_EMAIL); ?>"><?php echo htmlspecialchars (STRIPE_ADMIN_EMAIL); ?></a></p>
 
             <p>We will never sell your details on to anyone else.</p>
 
