@@ -9,16 +9,22 @@ class PayApi {
 
     private  $connection;
     public   $constants = [
-                 'STRIPE_PROVIDER',
-                 'STRIPE_TABLE_MANDATE',
-                 'STRIPE_TABLE_COLLECTION',
+                 'STRIPE_CODE',
+                 'STRIPE_DIR_STRIPE',
+                 'STRIPE_ADMIN_EMAIL',
+                 'STRIPE_ADMIN_PHONE',
+                 'STRIPE_TERMS' 
+                 'STRIPE_PRIVACY' 
                  'STRIPE_EMAIL',
                  'STRIPE_ERROR_LOG',
                  'STRIPE_CNFM_EM',
                  'STRIPE_CNFM_PH',
-                 'STRIPE_CCC',
                  'STRIPE_CMPLN_EM',
-                 'STRIPE_CMPLN_PH'
+                 'STRIPE_CMPLN_PH',
+                 'STRIPE_VOODOOSMS',
+                 'STRIPE_SMS_FROM',
+                 'STRIPE_SMS_MESSAGE',
+                 'STRIPE_CAMPAIGN_MONITOR'
              ];
     public   $database;
     public   $diagnostic;
@@ -53,11 +59,11 @@ class PayApi {
         try {
             // Update stripe_payment - `Paid`=NOW(),`Created`=CURDATE()
             // Insert a supporter, a player and a contact
-            //     canvas code is STRIPE_CCC
+            //     canvas code is STRIPE_CODE
             //     canvas_ref is new insert ID
             //     RefNo == canvas_ref + 100000
-            //     Provider = STRIPE_PROVIDER
-            //     ClientRef = STRIPE_PROVIDER.Refno
+            //     Provider = STRIPE_CODE
+            //     ClientRef = STRIPE_CODE . Refno
             // Em olrait?
             // Assign tickets by updating blotto_ticket
             try {
@@ -325,33 +331,10 @@ class PayApi {
     }
 
     private function sms_message ( ) {
-        $mysqli = new \mysqli (STRIPE_DB_HOST,STRIPE_DB_USERNAME,STRIPE_DB_PASSWORD,STRIPE_DB_DATABASE);
-        if ($mysqli->connect_errno) {
-            throw new \Exception ($mysqli->connecterror);
-            return false;
-        }
-        $project_id = STRIPE_PROJECT_ID;
-        $q = "
-          SELECT
-            `sms_from`
-           ,`sms_name`
-           ,`sms_phone`
-          FROM `projects`
-          WHERE `id`=$project_id
-        ";
-        $ps = $mysqli->query ($q);
-        if (!$ps) {
-            throw new \Exception ($mysqli->error);
-            return false;
-        }
-        if (!($p=$ps->fetch_assoc())) {
-            throw new \Exception ('Project ID '.$project_id.' not found');
-            return false;
-        }
-        $msg = STRIPE_SMS_MESSAGE;
-        $msg = str_replace ('{{NAME}}',$p['sms_name'],$msg);
-        $msg = str_replace ('{{PHONE}}',$p['sms_phone'],$msg);
-        return array ('from'=>$p['sms_from'],'message'=>$msg);
+        return [
+            'from' => STRIPE_SMS_FROM,
+            'message' => STRIPE_SMS_MESSAGE
+        ];
     }
 
     private function verify_email ($email) {
