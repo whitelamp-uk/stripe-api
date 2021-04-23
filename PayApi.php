@@ -378,7 +378,44 @@ class PayApi {
         return true;
     }
 
-    //DL: IMO all fields should be tested and an array of error messages created and returned...
+/*
+    DL:
+        IMO all fields should be tested and an array of error messages created
+        and returned...
+    MP:
+        It's a grey area:
+            1.  Returning anything other than false tends to imply all is well.
+            2.  For me at least, code that *returns* error strings is somewhat
+                of a gotcha.
+            3.  If the API fails to complete a transaction one might argue
+                that this is "fatal" to the API's primary purpose whether or not
+                the cause is user input. "Infinite are the arguments of the mages"
+        Middle ground position:
+            1.  If this class serves the code that collects the user input (which
+                it does currently) then it's a fair argument that bad user input
+                should not result in a "fatal" exception.
+            2.  Functions that need to report errors, instead of returning the
+                errors (which is weird), should return false and set the errors
+                by reference:
+
+                function do_stuff ($arg1,$arg2,&$user_errors=null) {
+                    $user_errors = [];
+                    // Use any "usual" arguments passed to do stuff and
+                    if ($there_is_an_error) {
+                        $user_errors[] = "I don't think you wanted to do that";
+                        return false;
+                    }
+                    // Everything is good
+                    return true;
+                }
+
+                if ($do_stuff('abc','def',$e)) {
+                    // Do more stuff here
+                }
+                else {
+                    print_r ($e);
+                }
+*/
     public function verify_general ( ) {
         foreach ($_POST as $key => $value) {
             $_POST[$key] = trim($value);
