@@ -57,8 +57,8 @@ class PayApi {
         $error = null;
         $step = null;
         try {
-            // Update stripe_payment - `Paid`=NOW(),`Created`=CURDATE()
-            // Insert a supporter, a player and a contact
+            // Update stripe_payment - `Paid`=NOW() where txn_ref=...
+            // Insert a supporter $this->supporter_add ($txn_ref)
             //     canvas code is STRIPE_CODE
             //     canvas_ref is new insert ID
             //     RefNo == canvas_ref + 100000
@@ -355,6 +355,80 @@ class PayApi {
             'from' => STRIPE_SMS_FROM,
             'message' => STRIPE_SMS_MESSAGE
         ];
+    }
+
+    private function supporter_add ($txn_ref) {
+        try {
+            $supporter = $this->connection->query (
+              "SELECT * FROM `stripe_payment` WHERE `txn_ref`='$txn_ref' LIMIT 0,1"
+            );
+            $supporter = $supporter->fetch_assoc ();
+            if (!$supporter) {
+                throw new \Exception ("Transaction reference '$txn_ref' was not identified");
+            }
+        }
+        catch (\mysqli_sql_exception $e) {
+            $this->error_log (122,'SQL select failed: '.$e->getMessage());
+            throw new \Exception ('SQL error');
+            return false;
+        }
+        $ccc        = STRIPE_CODE;
+        $provider   = STRIPE_CODE;
+        $refno      = STRIPE_REFNO_OFFSET + $supporter['id'];
+        $cref       = STRIPE_CODE.'_'.$refno;
+        // Insert a supporter, a player and a contact
+        try {
+            $this->connection->query (
+              "
+                INSERT INTO `blotto_supporter` SET
+                  `created`=DATE('{$['created']}')
+                 ,`signed`=DATE('{$['created']}')
+                 ,`approved`=DATE('{$['created']}')
+                 ,`canvas_code`='$ccc'
+                 ,`canvas_agent_ref`='$ccc'
+                 ,`canvas_ref`='{$['id']}'
+                 ,`client_ref`='$cref'
+              "
+            );
+            $sid = $this->connection->lastInsertId ();
+            $this->connection->query (
+              "
+                INSERT INTO `blotto_player` SET
+                 ,`started`=DATE('{$['created']}')
+                 ,`supporter_id`=$sid
+                 ,`client_ref`='$cref'
+                 ,`chances`={$['quantity']}
+              "
+            );
+            $this->connection->query (
+              "
+                INSERT INTO `blotto_contact` SET
+                  `supporter_id`=$sid
+                 ,`title`='{$['title']}'
+                 ,`name_first`='{$['first_name']}'
+                 ,`name_last`='{$['last_name']}'
+                 ,`email`='{$['email']}'
+                 ,`mobile`='{$['mobile']}'
+                 ,`telephone`='{$['telephone']}'
+                 ,`address_1`='{$['address_1']}'
+                 ,`address_2`='{$['address_2']}'
+                 ,`address_3`='{$['address_3']}'
+                 ,`town`='{$['town']}'
+                 ,`county`='{$['county']}'
+                 ,`postcode`='{$['postcode']}'
+                 ,`dob`='{$['dob']}'
+                 ,`p0`='{$['pref_1']}'
+                 ,`p1`='{$['pref_2']}'
+                 ,`p2`='{$['pref_3']}'
+                 ,`p3`='{$['pref_4']}'
+              "
+            );
+        }
+        catch (\mysqli_sql_exception $e) {
+            $this->error_log (121,'SQL insert failed: '.$e->getMessage());
+            throw new \Exception ('SQL error');
+            return false;
+        }
     }
 
     private function verify_email ($email) {

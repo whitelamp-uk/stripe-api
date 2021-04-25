@@ -20,6 +20,7 @@ define ( 'STRIPE_VOODOOSMS',            '/home/blotto/voodoosms/SMS.php'    );
 define ( 'STRIPE_SMS_FROM',             '11charLotto' );
 define ( 'STRIPE_SMS_MESSAGE',          'Shall I compare thee to a Stripe transaction?' );
 define ( 'STRIPE_CAMPAIGN_MONITOR', '/path/to/createsend-php/csrest_transactional_smartemail.php' );
+define ( 'STRIPE_REFNO_OFFSET',         100000000 );
 
 define ( 'CAMPAIGN_MONITOR_KEY',        ''      );
 define ( 'CAMPAIGN_MONITOR_SMART_EMAIL_ID', ''  );
