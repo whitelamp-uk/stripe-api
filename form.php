@@ -1,6 +1,6 @@
 
             <form id="payment-form">
-            <?php if (STRIPE_DEV_MODE) { ?>
+            <?php if (defined('STRIPE_DEV_MODE') && STRIPE_DEV_MODE) { ?>
                 <table>
                 <tr><td>Payment succeeds</td><td>4242 4242 4242 4242</td></tr>
                 <tr><td>Payment requires authentication</td><td>4000 0025 0000 3155</td></tr>
