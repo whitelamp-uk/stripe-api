@@ -9,16 +9,22 @@ class PayApi {
 
     private  $connection;
     public   $constants = [
-                 'STRIPE_PROVIDER',
-                 'STRIPE_TABLE_MANDATE',
-                 'STRIPE_TABLE_COLLECTION',
+                 'STRIPE_CODE',
+                 'STRIPE_DIR_STRIPE',
+                 'STRIPE_ADMIN_EMAIL',
+                 'STRIPE_ADMIN_PHONE',
+                 'STRIPE_TERMS',
+                 'STRIPE_PRIVACY',
                  'STRIPE_EMAIL',
                  'STRIPE_ERROR_LOG',
                  'STRIPE_CNFM_EM',
                  'STRIPE_CNFM_PH',
-                 'STRIPE_CCC',
                  'STRIPE_CMPLN_EM',
-                 'STRIPE_CMPLN_PH'
+                 'STRIPE_CMPLN_PH',
+                 'STRIPE_VOODOOSMS',
+                 'STRIPE_SMS_FROM',
+                 'STRIPE_SMS_MESSAGE',
+                 'STRIPE_CAMPAIGN_MONITOR'
              ];
     public   $database;
     public   $diagnostic;
@@ -53,13 +59,13 @@ class PayApi {
         $error = null;
         $step = null;
         try {
-            // Update stripe_payment - `Paid`=NOW(),`Created`=CURDATE()
-            // Insert a supporter, a player and a contact
-            //     canvas code is STRIPE_CCC
+            // Update stripe_payment - `Paid`=NOW() where txn_ref=...
+            // Insert a supporter $this->supporter_add ($txn_ref)
+            //     canvas code is STRIPE_CODE
             //     canvas_ref is new insert ID
             //     RefNo == canvas_ref + 100000
-            //     Provider = STRIPE_PROVIDER
-            //     ClientRef = STRIPE_PROVIDER.Refno
+            //     Provider = STRIPE_CODE
+            //     ClientRef = STRIPE_CODE . Refno
             // Em olrait?
             // Assign tickets by updating blotto_ticket
             try {
@@ -234,7 +240,7 @@ class PayApi {
         global $error;
         $v = $this->form_vars ();
         $titles = explode (',',BLOTTO_TITLES_WEB);
-        require __DIR__.'/form.php';
+        require __DIR__.'/form_signup.php';
     }
 
     private function output_mandates ( ) {
@@ -285,6 +291,7 @@ class PayApi {
             $error = 'Email address is not valid';
         }
         else {
+
             // Insert into stripe_payment leaving especially `Paid` and `Created` as null
             // $this->txn_ref = something unique to go in button
             $this->txn_ref = uniqid();
@@ -296,50 +303,7 @@ class PayApi {
               // Verify your integration in this guide by including this parameter
               'metadata' => ['integration_check' => 'accept_a_payment'],
             ]);
-            ?>
-
-
-            <form id="payment-form">
-            <?php if (STRIPE_DEV_MODE) { ?>
-                <table>
-                <tr><td>Payment succeeds</td><td>4000 0082 6000 0000</td></tr>
-                <tr><td>Payment requires authentication</td><td>4000 0025 0000 3155</td></tr>
-                <tr><td>Payment is declined</td><td>4000 0000 0000 9995</td></tr>
-                </table>
-            <?php } ?>
-
-              <div id="card-element"><!--Stripe.js injects the Card Element--></div>
-              <button id="submit">
-                <div class="spinner hidden" id="spinner"></div>
-                <span id="button-text">Pay now</span>
-              </button>
-              <p id="card-error" role="alert"></p>
-              <p class="result-message hidden">
-                Payment succeeded, see the result in your
-                <a href="" target="_blank">Stripe dashboard.</a> Refresh the page to pay again.
-              </p>
-            </form>
-
-            <script type="text/javascript">
-                var stripe = Stripe('<?php echo STRIPE_PUBLIC_KEY ?>');
-                var clientSecret = "<?php echo $intent->client_secret ?>";
-                var postcode = "<?php echo $_POST['postcode'] ?>";
-                var purchase = {
-                  items: [{ id: "xl-tshirt" }]
-                };
-                <?php require "client.js"; ?>
-
-
-                /*var elements = stripe.elements();
-                var style = {
-                  base: {
-                    color: "#32325d",
-                  }
-                };
-                var card = elements.create("card", { style: style });
-                card.mount("#card-element");*/
-            </script>
-            <?php
+            require __DIR__.'/form_payment.php';
         }
         if ($error) {
             throw new \Exception ($error);
@@ -348,33 +312,84 @@ class PayApi {
     }
 
     private function sms_message ( ) {
-        $mysqli = new \mysqli (STRIPE_DB_HOST,STRIPE_DB_USERNAME,STRIPE_DB_PASSWORD,STRIPE_DB_DATABASE);
-        if ($mysqli->connect_errno) {
-            throw new \Exception ($mysqli->connecterror);
+        return [
+            'from' => STRIPE_SMS_FROM,
+            'message' => STRIPE_SMS_MESSAGE
+        ];
+    }
+
+    private function supporter_add ($txn_ref) {
+        try {
+            $supporter = $this->connection->query (
+              "SELECT * FROM `stripe_payment` WHERE `txn_ref`='$txn_ref' LIMIT 0,1"
+            );
+            $supporter = $supporter->fetch_assoc ();
+            if (!$supporter) {
+                throw new \Exception ("Transaction reference '$txn_ref' was not identified");
+            }
+        }
+        catch (\mysqli_sql_exception $e) {
+            $this->error_log (122,'SQL select failed: '.$e->getMessage());
+            throw new \Exception ('SQL error');
             return false;
         }
-        $project_id = STRIPE_PROJECT_ID;
-        $q = "
-          SELECT
-            `sms_from`
-           ,`sms_name`
-           ,`sms_phone`
-          FROM `projects`
-          WHERE `id`=$project_id
-        ";
-        $ps = $mysqli->query ($q);
-        if (!$ps) {
-            throw new \Exception ($mysqli->error);
+        $ccc        = STRIPE_CODE;
+        $provider   = STRIPE_CODE;
+        $refno      = STRIPE_REFNO_OFFSET + $supporter['id'];
+        $cref       = STRIPE_CODE.'_'.$refno;
+        // Insert a supporter, a player and a contact
+        try {
+            $this->connection->query (
+              "
+                INSERT INTO `blotto_supporter` SET
+                  `created`=DATE('{$['created']}')
+                 ,`signed`=DATE('{$['created']}')
+                 ,`approved`=DATE('{$['created']}')
+                 ,`canvas_code`='$ccc'
+                 ,`canvas_agent_ref`='$ccc'
+                 ,`canvas_ref`='{$['id']}'
+                 ,`client_ref`='$cref'
+              "
+            );
+            $sid = $this->connection->lastInsertId ();
+            $this->connection->query (
+              "
+                INSERT INTO `blotto_player` SET
+                 ,`started`=DATE('{$['created']}')
+                 ,`supporter_id`=$sid
+                 ,`client_ref`='$cref'
+                 ,`chances`={$['quantity']}
+              "
+            );
+            $this->connection->query (
+              "
+                INSERT INTO `blotto_contact` SET
+                  `supporter_id`=$sid
+                 ,`title`='{$['title']}'
+                 ,`name_first`='{$['first_name']}'
+                 ,`name_last`='{$['last_name']}'
+                 ,`email`='{$['email']}'
+                 ,`mobile`='{$['mobile']}'
+                 ,`telephone`='{$['telephone']}'
+                 ,`address_1`='{$['address_1']}'
+                 ,`address_2`='{$['address_2']}'
+                 ,`address_3`='{$['address_3']}'
+                 ,`town`='{$['town']}'
+                 ,`county`='{$['county']}'
+                 ,`postcode`='{$['postcode']}'
+                 ,`dob`='{$['dob']}'
+                 ,`p0`='{$['pref_1']}'
+                 ,`p1`='{$['pref_2']}'
+                 ,`p2`='{$['pref_3']}'
+                 ,`p3`='{$['pref_4']}'
+              "
+            );
+        }
+        catch (\mysqli_sql_exception $e) {
+            $this->error_log (121,'SQL insert failed: '.$e->getMessage());
+            throw new \Exception ('SQL error');
             return false;
         }
-        if (!($p=$ps->fetch_assoc())) {
-            throw new \Exception ('Project ID '.$project_id.' not found');
-            return false;
-        }
-        $msg = STRIPE_SMS_MESSAGE;
-        $msg = str_replace ('{{NAME}}',$p['sms_name'],$msg);
-        $msg = str_replace ('{{PHONE}}',$p['sms_phone'],$msg);
-        return array ('from'=>$p['sms_from'],'message'=>$msg);
     }
 
     private function verify_email ($email) {
@@ -398,7 +413,44 @@ class PayApi {
         return true;
     }
 
-    //DL: IMO all fields should be tested and an array of error messages created and returned...
+/*
+    DL:
+        IMO all fields should be tested and an array of error messages created
+        and returned...
+    MP:
+        It's a grey area:
+            1.  Returning anything other than false tends to imply all is well.
+            2.  For me at least, code that *returns* error strings is somewhat
+                of a gotcha.
+            3.  If the API fails to complete a transaction one might argue
+                that this is "fatal" to the API's primary purpose whether or not
+                the cause is user input. "Infinite are the arguments of the mages"
+        Middle ground position:
+            1.  If this class serves the code that collects the user input (which
+                it does currently) then it's a fair argument that bad user input
+                should not result in a "fatal" exception.
+            2.  Functions that need to report errors, instead of returning the
+                errors (which is weird), should return false and set the errors
+                by reference:
+
+                function do_stuff ($arg1,$arg2,&$user_errors=null) {
+                    $user_errors = [];
+                    // Use any "usual" arguments passed to do stuff and
+                    if ($there_is_an_error) {
+                        $user_errors[] = "I don't think you wanted to do that";
+                        return false;
+                    }
+                    // Everything is good
+                    return true;
+                }
+
+                if ($do_stuff('abc','def',$e)) {
+                    // Do more stuff here
+                }
+                else {
+                    print_r ($e);
+                }
+*/
     public function verify_general ( ) {
         foreach ($_POST as $key => $value) {
             $_POST[$key] = trim($value);
