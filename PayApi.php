@@ -238,7 +238,7 @@ class PayApi {
         global $error;
         $v = $this->form_vars ();
         $titles = explode (',',BLOTTO_TITLES_WEB);
-        require __DIR__.'/form.php';
+        require __DIR__.'/form_signup.php';
     }
 
     private function output_mandates ( ) {
