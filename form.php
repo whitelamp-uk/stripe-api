@@ -70,29 +70,61 @@
 
           <label class="field-label">Number of chances each weekly draw</label>
 
-          <div>
+            <select name="quantity" id="quantity">
+              <?php
+              if(!$v['quantity']) {
+                $v['quantity'] = 1;
+              }
+              for ($i = 1; $i <= 10; $i++) {
+                echo '<option value="'.$i.'"';
+                if ($i == $v['quantity']) {
+                  echo " selected";
+                }
+                echo '>'.$i.'</option>';
+              }
+              ?>
+            </select>
+
+
+          <!-- div>
             <input type="radio" name="quantity" id="quantity-1" value="1" <?php if(!$v['quantity'] || $v['quantity']==1): ?>checked<?php endif;?> />
             <label for="quantity-1">1 chance for £4.34 monthly</label>
           </div>
           <div>
             <input type="radio" name="quantity" id="quantity-2" value="2" <?php if($v['quantity']==2): ?>checked<?php endif;?> />
             <label for="quantity-2">2 chances for £8.68 monthly</label>
-          </div>
+          </div -->
 
-        </div>
 
         <div class="field">
 
           <label class="field-label">Number of weekly draws</label>
 
-          <div>
+            <select name="draws" id="draws">
+              <?php
+              if(!$v['draws']) {
+                $v['draws'] = 1;
+              }
+              $max_weeks = intval(STRIPE_MAX_PAYMENT / $v['quantity']);
+              for ($i = 1; $i <= $max_weeks; $i++) {
+                echo '<option value="'.$i.'"';
+                if ($i == $v['draws']) {
+                  echo " selected";
+                }
+                echo '>'.$i.'</option>';
+              }
+              ?>
+            </select>
+
+
+          <!-- div>
             <input type="radio" name="draws" id="draws-1" value="1" <?php if(!$v['draws'] || $v['draws']==1): ?>checked<?php endif;?> />
             <label for="draws-1">1 draw</label>
           </div>
           <div>
             <input type="radio" name="draws" id="draws-2" value="2" <?php if($v['draws']==2): ?>checked<?php endif;?> />
             <label for="draws-2">2 chances for £8.68 monthly</label>
-          </div>
+          </div -->
 
         </div>
 

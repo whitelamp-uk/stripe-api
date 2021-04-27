@@ -27,6 +27,8 @@ class PayApi {
     private  $from;
     public   $tickets = [];
 
+    private  $txn_ref;
+
     public function __construct ($connection) {
         $this->connection = $connection;
         $this->setup ();
@@ -300,7 +302,7 @@ class PayApi {
             <form id="payment-form">
             <?php if (STRIPE_DEV_MODE) { ?>
                 <table>
-                <tr><td>Payment succeeds</td><td>4242 4242 4242 4242</td></tr>
+                <tr><td>Payment succeeds</td><td>4000 0082 6000 0000</td></tr>
                 <tr><td>Payment requires authentication</td><td>4000 0025 0000 3155</td></tr>
                 <tr><td>Payment is declined</td><td>4000 0000 0000 9995</td></tr>
                 </table>
@@ -321,6 +323,7 @@ class PayApi {
             <script type="text/javascript">
                 var stripe = Stripe('<?php echo STRIPE_PUBLIC_KEY ?>');
                 var clientSecret = "<?php echo $intent->client_secret ?>";
+                var postcode = "<?php echo $_POST['postcode'] ?>";
                 var purchase = {
                   items: [{ id: "xl-tshirt" }]
                 };

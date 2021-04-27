@@ -1,42 +1,46 @@
 
 // Disable the button until we have Stripe set up on the page
 document.querySelector("button").disabled = true;
+// https://stripe.com/docs/js/elements_object/create_element?type=card
+var elements = stripe.elements();
 
-    var elements = stripe.elements();
+var style = {
+  base: {
+    color: "#32325d",
+    fontFamily: 'Arial, sans-serif',
+    fontSmoothing: "antialiased",
+    fontSize: "16px",
+    "::placeholder": {
+      color: "#32325d"
+    }
+  },
+  invalid: {
+    fontFamily: 'Arial, sans-serif',
+    color: "#fa755a",
+    iconColor: "#fa755a"
+  }
+};
 
-    var style = {
-      base: {
-        color: "#32325d",
-        fontFamily: 'Arial, sans-serif',
-        fontSmoothing: "antialiased",
-        fontSize: "16px",
-        "::placeholder": {
-          color: "#32325d"
-        }
-      },
-      invalid: {
-        fontFamily: 'Arial, sans-serif',
-        color: "#fa755a",
-        iconColor: "#fa755a"
-      }
-    };
+console.log("postcode is " + postcode);
+//, value: "postalCode: '94110'", hidePostalCode: false
+let prefilledValues = {};
+prefilledValues.postalCode = postcode;
+var card = elements.create("card", { style: style, value: prefilledValues });
+// Stripe injects an iframe into the DOM
+card.mount("#card-element");
 
-    var card = elements.create("card", { style: style });
-    // Stripe injects an iframe into the DOM
-    card.mount("#card-element");
+card.on("change", function (event) {
+  // Disable the Pay button if there are no card details in the Element
+  document.querySelector("button").disabled = event.empty;
+  document.querySelector("#card-error").textContent = event.error ? event.error.message : "";
+});
 
-    card.on("change", function (event) {
-      // Disable the Pay button if there are no card details in the Element
-      document.querySelector("button").disabled = event.empty;
-      document.querySelector("#card-error").textContent = event.error ? event.error.message : "";
-    });
-
-    var form = document.getElementById("payment-form");
-    form.addEventListener("submit", function(event) {
-      event.preventDefault();
-      // Complete payment when the submit button is clicked
-      payWithCard(stripe, card, clientSecret);
-    });
+var form = document.getElementById("payment-form");
+form.addEventListener("submit", function(event) {
+  event.preventDefault();
+  // Complete payment when the submit button is clicked
+  payWithCard(stripe, card, clientSecret);
+});
 
 // Calls stripe.confirmCardPayment
 // If the card requires authentication Stripe shows a pop-up modal to
