@@ -10,7 +10,7 @@ class PayApi {
     private  $connection;
     public   $constants = [
                  'STRIPE_CODE',
-                 'STRIPE_DIR_STRIPE',
+                 //'STRIPE_DIR_STRIPE',
                  'STRIPE_ADMIN_EMAIL',
                  'STRIPE_ADMIN_PHONE',
                  'STRIPE_TERMS',
@@ -22,9 +22,9 @@ class PayApi {
                  'STRIPE_CMPLN_EM',
                  'STRIPE_CMPLN_PH',
                  'STRIPE_VOODOOSMS',
-                 'STRIPE_SMS_FROM',
-                 'STRIPE_SMS_MESSAGE',
-                 'STRIPE_CAMPAIGN_MONITOR'
+                 //'STRIPE_SMS_FROM',
+                 //'STRIPE_SMS_MESSAGE',
+                 //'STRIPE_CAMPAIGN_MONITOR'
              ];
     public   $database;
     public   $diagnostic;
@@ -192,7 +192,7 @@ class PayApi {
         foreach ($this->constants as $c) {
             if (!defined($c)) {
                 $this->error_log (124,"$c not defined");
-                throw new \Exception ('Configuration error');
+                throw new \Exception ('Configuration error $c not defined');
                 return false;
             }
         }
@@ -254,12 +254,12 @@ class PayApi {
             $this->connection->query (
               "
                 INSERT INTO `blotto_supporter` SET
-                  `created`=DATE('{$['created']}')
-                 ,`signed`=DATE('{$['created']}')
-                 ,`approved`=DATE('{$['created']}')
+                  `created`=DATE('{$supporter['created']}')
+                 ,`signed`=DATE('{$supporter['created']}')
+                 ,`approved`=DATE('{$supporter['created']}')
                  ,`canvas_code`='$ccc'
                  ,`canvas_agent_ref`='$ccc'
-                 ,`canvas_ref`='{$['id']}'
+                 ,`canvas_ref`='{$supporter['id']}'
                  ,`client_ref`='$cref'
               "
             );
@@ -267,33 +267,33 @@ class PayApi {
             $this->connection->query (
               "
                 INSERT INTO `blotto_player` SET
-                 ,`started`=DATE('{$['created']}')
+                 ,`started`=DATE('{$supporter['created']}')
                  ,`supporter_id`=$sid
                  ,`client_ref`='$cref'
-                 ,`chances`={$['quantity']}
+                 ,`chances`={$supporter['quantity']}
               "
             );
             $this->connection->query (
               "
                 INSERT INTO `blotto_contact` SET
                   `supporter_id`=$sid
-                 ,`title`='{$['title']}'
-                 ,`name_first`='{$['first_name']}'
-                 ,`name_last`='{$['last_name']}'
-                 ,`email`='{$['email']}'
-                 ,`mobile`='{$['mobile']}'
-                 ,`telephone`='{$['telephone']}'
-                 ,`address_1`='{$['address_1']}'
-                 ,`address_2`='{$['address_2']}'
-                 ,`address_3`='{$['address_3']}'
-                 ,`town`='{$['town']}'
-                 ,`county`='{$['county']}'
-                 ,`postcode`='{$['postcode']}'
-                 ,`dob`='{$['dob']}'
-                 ,`p0`='{$['pref_1']}'
-                 ,`p1`='{$['pref_2']}'
-                 ,`p2`='{$['pref_3']}'
-                 ,`p3`='{$['pref_4']}'
+                 ,`title`='{$supporter['title']}'
+                 ,`name_first`='{$supporter['first_name']}'
+                 ,`name_last`='{$supporter['last_name']}'
+                 ,`email`='{$supporter['email']}'
+                 ,`mobile`='{$supporter['mobile']}'
+                 ,`telephone`='{$supporter['telephone']}'
+                 ,`address_1`='{$supporter['address_1']}'
+                 ,`address_2`='{$supporter['address_2']}'
+                 ,`address_3`='{$supporter['address_3']}'
+                 ,`town`='{$supporter['town']}'
+                 ,`county`='{$supporter['county']}'
+                 ,`postcode`='{$supporter['postcode']}'
+                 ,`dob`='{$supporter['dob']}'
+                 ,`p0`='{$supporter['pref_1']}'
+                 ,`p1`='{$supporter['pref_2']}'
+                 ,`p2`='{$supporter['pref_3']}'
+                 ,`p3`='{$supporter['pref_4']}'
               "
             );
         }
@@ -307,5 +307,5 @@ class PayApi {
 }
 
 require_once STRIPE_INIT_FILE;
-require_once STRIPE_CAMPAIGN_MONITOR;
+//require_once STRIPE_CAMPAIGN_MONITOR;
 

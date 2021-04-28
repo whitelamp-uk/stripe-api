@@ -1,9 +1,10 @@
-
+console.log("098ujoi");
 // Disable the button until we have Stripe set up on the page
 document.querySelector("button").disabled = true;
 // https://stripe.com/docs/js/elements_object/create_element?type=card
+console.log("sdfhuihi");
 var elements = stripe.elements();
-
+console.log("872136");
 var style = {
   base: {
     color: "#32325d",
@@ -20,8 +21,9 @@ var style = {
     iconColor: "#fa755a"
   }
 };
-
+console.log("98yhef");
 console.log("postcode is " + postcode);
+console.log("8907");
 //, value: "postalCode: '94110'", hidePostalCode: false
 let prefilledValues = {};
 prefilledValues.postalCode = postcode;
