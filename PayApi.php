@@ -45,7 +45,7 @@ class PayApi {
             // Send confirmation email
             if (STRIPE_CMPLN_EM) {
                 $step = 'Confirmation email';
-                $this->campaign_monitor ($this->supporter);
+                campaign_monitor ($this->supporter);
             }
             // Send confirmation SMS
             if (STRIPE_CMPLN_PH) {
@@ -71,28 +71,6 @@ class PayApi {
             $error
         );
         return false;
-    }
-
-    private function campaign_monitor ($ref,$tickets,$first_draw_close,$draws) {
-        $cm         = new \CS_REST_Transactional_SmartEmail (
-            CAMPAIGN_MONITOR_SMART_EMAIL_ID,
-            array ('api_key' => CAMPAIGN_MONITOR_KEY)
-        );
-        $first      = new \DateTime ($first_draw_close);
-        $first->add ('P1D');
-        $first      = $first->format ('l jS F Y');
-        $name       = str_replace (':','',$_POST['first_name']);
-        $name      .= ' ';
-        $name      .= str_replace (':','',$_POST['last_name']);
-        $message    = array (
-            "To"    => $name.' <'.$_POST['email'].'>',
-            "Data"  => $this->supporter
-        );
-        $result     = $cm->send (
-            $message,
-            'unchanged'
-        );
-        // error_log ('Campaign Monitor result: '.print_r($result,true));
     }
 
     private function complete ($txn_ref) {
@@ -247,13 +225,15 @@ class PayApi {
             return false;
         }
         return [
+            'Email'         => $s['email'],
             'Mobile'        => $s['first_name'],
             'First_Name'    => $s['first_name'],
+            'Last_Name'     => $s['last_name'],
             'Reference'     => $cref,
             'Chances'       => $s['quantity'],
             'Tickets'       => explode (',',$tickets),
             'Draws'         => $s['draws'],
-            'First_Draw'    => draw_first ($s['created'],STRIPE_CODE)
+            'First_Draw'    => draw_first ($s['created'],PAYPAL_CODE)
         ];
     }
 
