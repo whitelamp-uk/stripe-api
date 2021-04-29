@@ -220,9 +220,9 @@ class PayApi {
             'Last_Name'     => $s['last_name'],
             'Reference'     => $cref,
             'Chances'       => $s['quantity'],
-            'Tickets'       => explode (',',$tickets),
+            'Tickets'       => implode (',',$tickets),
             'Draws'         => $s['draws'],
-            'First_Draw'    => draw_first ($s['created'],PAYPAL_CODE)
+            'First_Draw'    => draw_first ($s['created'],STRIPE_CODE)
         ];
     }
 
