@@ -43,12 +43,12 @@ class PayApi {
             $this->complete ($txn_ref);
             $this->supporter = $this->supporter_add ($txn_ref);
             // Send confirmation email
-            if (PAYPAL_CMPLN_EM) {
+            if (STRIPE_CMPLN_EM) {
                 $step = 'Confirmation email';
                 $this->campaign_monitor ($this->supporter);
             }
             // Send confirmation SMS
-            if (PAYPAL_CMPLN_PH) {
+            if (STRIPE_CMPLN_PH) {
                 if (!class_exists('\SMS')) {
                     throw new \Exception ('Class \SMS not found');
                     return false;
@@ -57,7 +57,7 @@ class PayApi {
                 $sms        = new \SMS ();
                 // Temporarily
                 $message    = print_r ($this->supporter,true);
-                $sms->send ($this->supporter['Mobile'],$message,PAYPAL_SMS_FROM);
+                $sms->send ($this->supporter['Mobile'],$message,STRIPE_SMS_FROM);
             }
             return true;
         }
@@ -66,7 +66,7 @@ class PayApi {
         }
         error_log ($error);
         mail (
-            PAYPAL_EMAIL_ERROR,
+            STRIPE_EMAIL_ERROR,
             'Stripe sign-up callback error',
             $error
         );
@@ -106,6 +106,10 @@ class PayApi {
             throw new \Exception ('SQL error');
             return false;
         }
+    }
+
+    private function cref ($id) {
+        return STRIPE_CODE.'_'.$this->refno($id);
     }
 
     private function error_log ($code,$message) {
@@ -169,6 +173,10 @@ class PayApi {
         }
     }
 
+    private function refno ($id) {
+        return STRIPE_REFNO_OFFSET + $id;
+    }
+
     private function setup ( ) {
         foreach ($this->constants as $c) {
             if (!defined($c)) {
@@ -226,59 +234,12 @@ class PayApi {
             throw new \Exception ('SQL error');
             return false;
         }
-        $ccc        = STRIPE_CODE;
-        $provider   = STRIPE_CODE;
-        $refno      = STRIPE_REFNO_OFFSET + $s['id'];
-        $cref       = STRIPE_CODE.'_'.$refno;
-        // Insert a supporter, a player and a contact
         try {
-            $this->connection->query (
-              "
-                INSERT INTO `blotto_supporter` SET
-                  `created`=DATE('{$s['created']}')
-                 ,`signed`=DATE('{$s['created']}')
-                 ,`approved`=DATE('{$s['created']}')
-                 ,`canvas_code`='$ccc'
-                 ,`canvas_agent_ref`='$ccc'
-                 ,`canvas_ref`='{$s['id']}'
-                 ,`client_ref`='$cref'
-              "
-            );
-            $sid = $this->connection->lastInsertId ();
-            $this->connection->query (
-              "
-                INSERT INTO `blotto_player` SET
-                 ,`started`=DATE('{$s['created']}')
-                 ,`supporter_id`=$sid
-                 ,`client_ref`='$cref'
-                 ,`chances`={$s['quantity']}
-              "
-            );
-            $this->connection->query (
-              "
-                INSERT INTO `blotto_contact` SET
-                  `supporter_id`=$sid
-                 ,`title`='{$s['title']}'
-                 ,`name_first`='{$s['first_name']}'
-                 ,`name_last`='{$s['last_name']}'
-                 ,`email`='{$s['email']}'
-                 ,`mobile`='{$s['mobile']}'
-                 ,`telephone`='{$s['telephone']}'
-                 ,`address_1`='{$s['address_1']}'
-                 ,`address_2`='{$s['address_2']}'
-                 ,`address_3`='{$s['address_3']}'
-                 ,`town`='{$s['town']}'
-                 ,`county`='{$s['county']}'
-                 ,`postcode`='{$s['postcode']}'
-                 ,`dob`='{$s['dob']}'
-                 ,`p0`='{$s['pref_1']}'
-                 ,`p1`='{$s['pref_2']}'
-                 ,`p2`='{$s['pref_3']}'
-                 ,`p3`='{$s['pref_4']}'
-              "
-            );
-            // I guess we have to add tickets here so that they can be emailed/texted
-            $tickets = [];
+            // Insert a supporter, a player and a contact
+            $cref = $this->cref ($s['id']);
+            signup ($s,STRIPE_CODE,$cref);
+            // Add tickets here so that they can be emailed/texted
+            $tickets = tickets (STRIPE_CODE,$this->refno($s['id']),$cref,$s['chances']);
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (121,'SQL insert failed: '.$e->getMessage());
