@@ -13,7 +13,7 @@ class PayApi {
                  'STRIPE_INIT_FILE',
                  'STRIPE_ADMIN_EMAIL',
                  'STRIPE_ADMIN_PHONE',
-                 'STRIPE_TERMS' ,
+                 'STRIPE_TERMS',
                  'STRIPE_PRIVACY',
                  'STRIPE_EMAIL',
                  'STRIPE_CMPLN_EML',
