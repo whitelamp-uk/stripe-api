@@ -1,29 +1,29 @@
 <?php
 
 // Organisation
-define ( 'BLOTTO_PAY_API_STRIPE',       '/some/stripe-api/PayApi.php'       );
-define ( 'BLOTTO_PAY_API_STRIPE_CLASS', '\Blotto\Stripe\PayApi'             );
-define ( 'BLOTTO_PAY_API_STRIPE_CODE',  'STRP'                              );
-define ( 'STRIPE_CODE',                 BLOTTO_PAY_API_STRIPE_CODE          );
-define ( 'STRIPE_DIR_STRIPE',           '/some/stripe-php-7.77.0'           );
-define ( 'STRIPE_ADMIN_EMAIL',          'stripe.support@my.biz'             );
-define ( 'STRIPE_ADMIN_PHONE',          '01 234 567 890'                    );
-define ( 'STRIPE_TERMS' ,                   'https://my.biz/terms'          );
-define ( 'STRIPE_PRIVACY' ,                 'https://my.biz/privacy'        );
-define ( 'STRIPE_EMAIL',                'stripe.account@my.domain'          );
-define ( 'STRIPE_ERROR_LOG',            false   );
-define ( 'STRIPE_CNFM_EM',              true    ); // User must confirm email address
-define ( 'STRIPE_CNFM_PH',              false   ); // User must confirm phone number
-define ( 'STRIPE_CMPLN_EM',             true    ); // Send completion message by email
-define ( 'STRIPE_CMPLN_PH',             false   ); // Send completion message by SMS
-define ( 'STRIPE_VOODOOSMS',            '/home/blotto/voodoosms/SMS.php'    );
-define ( 'STRIPE_SMS_FROM',             '11charLotto' );
-define ( 'STRIPE_SMS_MESSAGE',          'Shall I compare thee to a Stripe transaction?' );
-define ( 'STRIPE_CAMPAIGN_MONITOR', '/path/to/createsend-php/csrest_transactional_smartemail.php' );
-define ( 'STRIPE_REFNO_OFFSET',         100000000 );
+define ( 'BLOTTO_PAY_API_STRIPE',           '/path/to/stripe-api/PayApi.php' );
+define ( 'BLOTTO_PAY_API_STRIPE_CLASS',     '\Blotto\Stripe\PayApi'         );
+define ( 'BLOTTO_PAY_API_STRIPE_BUY',       true        ); // Provide integration
+define ( 'STRIPE_CODE',             'STRP'      ); // CCC and Provider
+define ( 'STRIPE_INIT_FILE',        '/path/to/stripe-php-7.77.0/init.php'   );
+define ( 'STRIPE_ADMIN_EMAIL',      'stripe.support@my.biz'                 );
+define ( 'STRIPE_ADMIN_PHONE',      '01 234 567 890'                        );
+define ( 'STRIPE_TERMS' ,           'https://my.biz/terms'                  );
+define ( 'STRIPE_PRIVACY' ,         'https://my.biz/privacy'                );
+define ( 'STRIPE_EMAIL',            'paypal.account@my.domain'              );
+define ( 'STRIPE_CMPLN_EML',        true        ); // Send completion message by email
+define ( 'STRIPE_CMPLN_MOB',        false       ); // Send completion message by SMS
+define ( 'STRIPE_ERROR_LOG',        false                                   );
+define ( 'STRIPE_REFNO_OFFSET',     100000000           );
 
-define ( 'CAMPAIGN_MONITOR_KEY',        ''      );
+define ( 'CAMPAIGN_MONITOR',        '/path/to/createsend-php/csrest_transactional_smartemail.php' );
+define ( 'CAMPAIGN_MONITOR_KEY',    '' );
 define ( 'CAMPAIGN_MONITOR_SMART_EMAIL_ID', ''  );
+
+define ( 'VOODOOSMS',               '/home/blotto/voodoosms/SMS.php'        );
+
+define ( 'BLOTTO_SIGNUP_VFY_EML',   true        ); // User must confirm email address
+define ( 'BLOTTO_SIGNUP_VFY_MOB',   false       ); // User must confirm phone number
 
 
 

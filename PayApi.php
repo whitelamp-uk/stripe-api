@@ -10,14 +10,16 @@ class PayApi {
     private  $connection;
     public   $constants = [
                  'STRIPE_CODE',
+                 'STRIPE_INIT_FILE',
                  'STRIPE_ADMIN_EMAIL',
                  'STRIPE_ADMIN_PHONE',
-                 'STRIPE_TERMS',
+                 'STRIPE_TERMS' ,
                  'STRIPE_PRIVACY',
                  'STRIPE_EMAIL',
+                 'STRIPE_CMPLN_EML',
+                 'STRIPE_CMPLN_MOB',
                  'STRIPE_ERROR_LOG',
-                 'STRIPE_CNFM_EM',
-                 'STRIPE_CNFM_PH',
+                 'STRIPE_REFNO_OFFSET'
              ];
     public   $database;
     public   $diagnostic;
@@ -39,30 +41,24 @@ class PayApi {
     public function callback ( ) {
         try {
             $error = null;
-            $step = null;
+            $step = 1;
             $this->complete ($txn_ref);
+            $step = 2;
             $this->supporter = $this->supporter_add ($txn_ref);
-            // Send confirmation email
-            if (STRIPE_CMPLN_EM) {
-                $step = 'Confirmation email';
+            if (STRIPE_CMPLN_EML) {
+                $step = 3;
                 campaign_monitor ($this->supporter);
             }
-            // Send confirmation SMS
-            if (STRIPE_CMPLN_PH) {
-                if (!class_exists('\SMS')) {
-                    throw new \Exception ('Class \SMS not found');
-                    return false;
-                }
-                $step = 'Confirmation SMS';
-                $sms        = new \SMS ();
-                // Temporarily
+            if (STRIPE_CMPLN_MOB) {
+                $step = 4;
+                // TODO: we need to build a proper message
                 $message    = print_r ($this->supporter,true);
-                $sms->send ($this->supporter['Mobile'],$message,STRIPE_SMS_FROM);
+                sms ($this->supporter['Mobile'],$message,STRIPE_SMS_FROM);
             }
             return true;
         }
         catch (\Exception $e) {
-            $error = "Error for txn=$txn_ref: {$e->getMessage()}";
+            $error = "Error for txn=$txn_ref, step=$step: {$e->getMessage()}";
         }
         error_log ($error);
         mail (
@@ -174,13 +170,6 @@ class PayApi {
             throw new \Exception ('SQL database error');
             return false;
         }
-    }
-
-    private function sms_message ( ) {
-        return [
-            'from' => STRIPE_SMS_FROM,
-            'message' => STRIPE_SMS_MESSAGE
-        ];
     }
 
     public function start ( ) {
