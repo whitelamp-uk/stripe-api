@@ -10,7 +10,6 @@ class PayApi {
     private  $connection;
     public   $constants = [
                  'STRIPE_CODE',
-                 //'STRIPE_DIR_STRIPE',
                  'STRIPE_ADMIN_EMAIL',
                  'STRIPE_ADMIN_PHONE',
                  'STRIPE_TERMS',
@@ -19,19 +18,13 @@ class PayApi {
                  'STRIPE_ERROR_LOG',
                  'STRIPE_CNFM_EM',
                  'STRIPE_CNFM_PH',
-                 'STRIPE_CMPLN_EM',
-                 'STRIPE_CMPLN_PH',
-                 'STRIPE_VOODOOSMS',
-                 //'STRIPE_SMS_FROM',
-                 //'STRIPE_SMS_MESSAGE',
-                 //'STRIPE_CAMPAIGN_MONITOR'
              ];
     public   $database;
     public   $diagnostic;
     public   $error;
     public   $errorCode = 0;
     private  $from;
-    public   $tickets = [];
+    public   $supporter = [];
 
     private  $txn_ref;
 
@@ -43,60 +36,41 @@ class PayApi {
     public function __destruct ( ) {
     }
 
-    public function button ( ) {
-        if ($this->txn_ref) {
-            require __DIR__.'/button.php';
-        }
-    }
-
     public function callback ( ) {
         try {
-            // Do Stripe stuff
+            $error = null;
+            $step = null;
+            $this->complete ($txn_ref);
+            $this->supporter = $this->supporter_add ($txn_ref);
+            // Send confirmation email
+            if (PAYPAL_CMPLN_EM) {
+                $step = 'Confirmation email';
+                $this->campaign_monitor ($this->supporter);
+            }
+            // Send confirmation SMS
+            if (PAYPAL_CMPLN_PH) {
+                if (!class_exists('\SMS')) {
+                    throw new \Exception ('Class \SMS not found');
+                    return false;
+                }
+                $step = 'Confirmation SMS';
+                $sms        = new \SMS ();
+                // Temporarily
+                $message    = print_r ($this->supporter,true);
+                $sms->send ($this->supporter['Mobile'],$message,PAYPAL_SMS_FROM);
+            }
+            return true;
         }
         catch (\Exception $e) {
-            // Say FOOEY back to Stripe
-        }
-        $error = null;
-        $step = null;
-        try {
-            // Update stripe_payment - `Paid`=NOW() where txn_ref=...
-            // Insert a supporter $this->supporter_add ($txn_ref)
-            //     canvas code is STRIPE_CODE
-            //     canvas_ref is new insert ID
-            //     RefNo == canvas_ref + 100000
-            //     Provider = STRIPE_CODE
-            //     ClientRef = STRIPE_CODE . Refno
-            // Em olrait?
-            // Assign tickets by updating blotto_ticket
-            try {
-                // Say OK back to Stripe
-                // Send confirmation email
-                if (STRIPE_CMPLN_EM) {
-                    $step = 'Confirmation email';
-                    $this->campaign_monitor ($supporter_nr,$tickets,$first_draw_close,$draws);
-                }
-                // Send confirmation SMS
-                if (STRIPE_CMPLN_PH) {
-                    $step = 'Confirmation SMS';
-                    $sms        = new \SMS ();
-                    $details    = sms_message ();
-                    $sms->send ($_POST['mobile'],$details['message'],$details['from']);
-                }
-                return true;
-            }
-            catch (\Exception $e) {
-                $error = 'TXN_REF '.$txn_ref.' '.$step.': '.$e->getMessage();
-            }
-        }
-        catch (\mysqli_sql_exception $e) {
-            $error = 'TXN_REF '.$txn_ref.' SQL exception: '.$e->getMessage();
+            $error = "Error for txn=$txn_ref: {$e->getMessage()}";
         }
         error_log ($error);
         mail (
-            STRIPE_EMAIL_ERROR,
+            PAYPAL_EMAIL_ERROR,
             'Stripe sign-up callback error',
             $error
         );
+        return false;
     }
 
     private function campaign_monitor ($ref,$tickets,$first_draw_close,$draws) {
@@ -112,19 +86,26 @@ class PayApi {
         $name      .= str_replace (':','',$_POST['last_name']);
         $message    = array (
             "To"    => $name.' <'.$_POST['email'].'>',
-            "Data"  => array (
-                'First_Name'    => $_POST['first_name'],
-                'Reference'     => $ref,
-                'Tickets'       => $tickets,
-                'First'         => $first,
-                'Draws'         => $draws,
-            )
+            "Data"  => $this->supporter
         );
         $result     = $cm->send (
             $message,
             'unchanged'
         );
         // error_log ('Campaign Monitor result: '.print_r($result,true));
+    }
+
+    private function complete ($txn_ref) {
+        try {
+            $this->connection->query (
+                "UPDATE `stripe_payment` SET `paid`=NOW() WHERE `txn_ref`='$txn_ref' LIMIT 1"
+            );
+        }
+        catch (\mysqli_sql_exception $e) {
+            $this->error_log (122,'SQL select failed: '.$e->getMessage());
+            throw new \Exception ('SQL error');
+            return false;
+        }
     }
 
     private function error_log ($code,$message) {
@@ -232,11 +213,11 @@ class PayApi {
 
     private function supporter_add ($txn_ref) {
         try {
-            $supporter = $this->connection->query (
+            $s = $this->connection->query (
               "SELECT * FROM `stripe_payment` WHERE `txn_ref`='$txn_ref' LIMIT 0,1"
             );
-            $supporter = $supporter->fetch_assoc ();
-            if (!$supporter) {
+            $s = $s->fetch_assoc ();
+            if (!$s) {
                 throw new \Exception ("Transaction reference '$txn_ref' was not identified");
             }
         }
@@ -247,19 +228,19 @@ class PayApi {
         }
         $ccc        = STRIPE_CODE;
         $provider   = STRIPE_CODE;
-        $refno      = STRIPE_REFNO_OFFSET + $supporter['id'];
+        $refno      = STRIPE_REFNO_OFFSET + $s['id'];
         $cref       = STRIPE_CODE.'_'.$refno;
         // Insert a supporter, a player and a contact
         try {
             $this->connection->query (
               "
                 INSERT INTO `blotto_supporter` SET
-                  `created`=DATE('{$supporter['created']}')
-                 ,`signed`=DATE('{$supporter['created']}')
-                 ,`approved`=DATE('{$supporter['created']}')
+                  `created`=DATE('{$s['created']}')
+                 ,`signed`=DATE('{$s['created']}')
+                 ,`approved`=DATE('{$s['created']}')
                  ,`canvas_code`='$ccc'
                  ,`canvas_agent_ref`='$ccc'
-                 ,`canvas_ref`='{$supporter['id']}'
+                 ,`canvas_ref`='{$s['id']}'
                  ,`client_ref`='$cref'
               "
             );
@@ -267,45 +248,55 @@ class PayApi {
             $this->connection->query (
               "
                 INSERT INTO `blotto_player` SET
-                 ,`started`=DATE('{$supporter['created']}')
+                 ,`started`=DATE('{$s['created']}')
                  ,`supporter_id`=$sid
                  ,`client_ref`='$cref'
-                 ,`chances`={$supporter['quantity']}
+                 ,`chances`={$s['quantity']}
               "
             );
             $this->connection->query (
               "
                 INSERT INTO `blotto_contact` SET
                   `supporter_id`=$sid
-                 ,`title`='{$supporter['title']}'
-                 ,`name_first`='{$supporter['first_name']}'
-                 ,`name_last`='{$supporter['last_name']}'
-                 ,`email`='{$supporter['email']}'
-                 ,`mobile`='{$supporter['mobile']}'
-                 ,`telephone`='{$supporter['telephone']}'
-                 ,`address_1`='{$supporter['address_1']}'
-                 ,`address_2`='{$supporter['address_2']}'
-                 ,`address_3`='{$supporter['address_3']}'
-                 ,`town`='{$supporter['town']}'
-                 ,`county`='{$supporter['county']}'
-                 ,`postcode`='{$supporter['postcode']}'
-                 ,`dob`='{$supporter['dob']}'
-                 ,`p0`='{$supporter['pref_1']}'
-                 ,`p1`='{$supporter['pref_2']}'
-                 ,`p2`='{$supporter['pref_3']}'
-                 ,`p3`='{$supporter['pref_4']}'
+                 ,`title`='{$s['title']}'
+                 ,`name_first`='{$s['first_name']}'
+                 ,`name_last`='{$s['last_name']}'
+                 ,`email`='{$s['email']}'
+                 ,`mobile`='{$s['mobile']}'
+                 ,`telephone`='{$s['telephone']}'
+                 ,`address_1`='{$s['address_1']}'
+                 ,`address_2`='{$s['address_2']}'
+                 ,`address_3`='{$s['address_3']}'
+                 ,`town`='{$s['town']}'
+                 ,`county`='{$s['county']}'
+                 ,`postcode`='{$s['postcode']}'
+                 ,`dob`='{$s['dob']}'
+                 ,`p0`='{$s['pref_1']}'
+                 ,`p1`='{$s['pref_2']}'
+                 ,`p2`='{$s['pref_3']}'
+                 ,`p3`='{$s['pref_4']}'
               "
             );
+            // I guess we have to add tickets here so that they can be emailed/texted
+            $tickets = [];
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (121,'SQL insert failed: '.$e->getMessage());
             throw new \Exception ('SQL error');
             return false;
         }
+        return [
+            'Mobile'        => $s['first_name'],
+            'First_Name'    => $s['first_name'],
+            'Reference'     => $cref,
+            'Chances'       => $s['quantity'],
+            'Tickets'       => explode (',',$tickets),
+            'Draws'         => $s['draws'],
+            'First_Draw'    => draw_first ($s['created'],STRIPE_CODE)
+        ];
     }
 
 }
 
 require_once STRIPE_INIT_FILE;
-//require_once STRIPE_CAMPAIGN_MONITOR;
 
