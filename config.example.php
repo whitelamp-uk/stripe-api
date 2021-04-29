@@ -16,6 +16,17 @@ define ( 'STRIPE_CMPLN_MOB',        false       ); // Send completion message by
 define ( 'STRIPE_ERROR_LOG',        false                                   );
 define ( 'STRIPE_REFNO_OFFSET',     100000000           );
 
+define ( 'STRIPE_MAX_TICKETS',      10          );
+define ( 'STRIPE_MAX_PAYMENT',      50          );
+
+define ( 'STRIPE_D8_USERNAME',          ''      );
+define ( 'STRIPE_D8_PASSWORD',          ''      );
+
+define ( 'STRIPE_SECRET_KEY',      '' );
+define ( 'STRIPE_PUBLIC_KEY', '' );
+define ( 'STRIPE_DEV_MODE', true );
+
+
 define ( 'CAMPAIGN_MONITOR',        '/path/to/createsend-php/csrest_transactional_smartemail.php' );
 define ( 'CAMPAIGN_MONITOR_KEY',    '' );
 define ( 'CAMPAIGN_MONITOR_SMART_EMAIL_ID', ''  );
@@ -34,7 +45,5 @@ define ( 'STRIPE_CCC',                  'CXXX'          ); // CCC to use in lott
 define ( 'STRIPE_TABLE_MANDATE',        'blotto_build_mandate'      );
 define ( 'STRIPE_TABLE_COLLECTION',     'blotto_build_collection'   );
 
-define ( 'STRIPE_D8_USERNAME',          'development@burdenandburden.co.uk' );
-define ( 'STRIPE_D8_PASSWORD',          ''              );
 define ( 'STRIPE_D8_EML_VERIFY_LEVEL',  'MX'            );
 
