@@ -178,13 +178,18 @@ class PayApi {
     }
 
     public function start ( ) {
-        // Insert into stripe_payment leaving especially `Paid` and `Created` as null
         // $this->txn_ref = something unique to go in button
         $this->txn_ref = uniqid ();
         Stripe::setApiKey(STRIPE_SECRET_KEY);
+        $v = www_signup_vars ();
+        // Insert into stripe_payment leaving especially `Paid` and `Created` as null
+
+        $amount = $v['quantity'] * $v['draws'] * BLOTTO_TICKET_PRICE;
         $intent = PaymentIntent::create([
-          'amount' => 1099,
+          'amount' => $amount,
           'currency' => 'gbp',
+          'description' => STRIPE_DESCRIPTION,
+          // DL: The docs seem to say metadata is optional and arbitrary; poss required when doing development...
           // Verify your integration in this guide by including this parameter
           'metadata' => ['integration_check' => 'accept_a_payment'],
         ]);
