@@ -48,7 +48,11 @@ class PayApi {
             $this->supporter = $this->supporter_add ($txn_ref);
             if (STRIPE_CMPLN_EML) {
                 $step = 3;
-                campaign_monitor (STRIPE_CMPLN_EML_CM_ID,$this->supporter);
+                campaign_monitor (
+                    STRIPE_CMPLN_EML_CM_ID,
+                    $this->supporter['To'],
+                    $this->supporter
+                );
             }
             if (STRIPE_CMPLN_MOB) {
                 $step = 4;
@@ -202,19 +206,17 @@ class PayApi {
             throw new \Exception ('SQL error');
             return false;
         }
-        try {
-            // Insert a supporter, a player and a contact
-            $cref = $this->cref ($s['id']);
-            signup ($s,STRIPE_CODE,$cref);
-            // Add tickets here so that they can be emailed/texted
-            $tickets = tickets (STRIPE_CODE,$this->refno($s['id']),$cref,$s['chances']);
-        }
-        catch (\mysqli_sql_exception $e) {
-            $this->error_log (121,'SQL insert failed: '.$e->getMessage());
-            throw new \Exception ('SQL error');
-            return false;
-        }
+        // Insert a supporter, a player and a contact
+        $cref               = $this->cref ($s['id']);
+        signup ($s,STRIPE_CODE,$cref);
+        // Add tickets here so that they can be emailed/texted
+        $tickets            = tickets (STRIPE_CODE,$this->refno($s['id']),$cref,$s['chances']);
+        $draw_first         = new \DateTime (draw_first($s['created'],STRIPE_CODE));
+        $draw_first->add ('P1D');
         return [
+            'To'            => $s['first_name'].' '.$s['last_name'].' <'.$s['email'].'>',
+            'Title'         => $s['title'],
+            'Name'          => $s['first_name'].' '.$s['last_name'],
             'Email'         => $s['email'],
             'Mobile'        => $s['first_name'],
             'First_Name'    => $s['first_name'],
@@ -223,7 +225,7 @@ class PayApi {
             'Chances'       => $s['quantity'],
             'Tickets'       => implode (',',$tickets),
             'Draws'         => $s['draws'],
-            'First_Draw'    => draw_first ($s['created'],STRIPE_CODE)
+            'First_Draw'    => $draw_first->format ('l jS F Y')
         ];
     }
 
