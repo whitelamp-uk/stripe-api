@@ -6,7 +6,7 @@ SELECT
  ,`TransactionRef`
  ,`ClientRef`
  ,`Amount`
-FROM `pponce_payment`
+FROM `stripe_payment`
 WHERE `Created` IS NOT NULL
   AND `Created`>='{{STRIPE_FROM}}'
 ORDER BY `id`
