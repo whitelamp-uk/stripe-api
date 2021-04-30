@@ -8,7 +8,7 @@
                 </table>
             <?php } ?>
 
-              <div id="card-element"><!--Stripe.js injects the Card Element--></div>
+              <div id="card-element"><!--client.js injects the card element--></div>
               <button id="submit">
                 <div class="spinner hidden" id="spinner"></div>
                 <span id="button-text">Pay now</span>
