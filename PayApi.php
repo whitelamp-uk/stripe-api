@@ -16,6 +16,7 @@ class PayApi {
                  'STRIPE_TERMS',
                  'STRIPE_PRIVACY',
                  'STRIPE_EMAIL',
+                 'STRIPE_CMPLN_EML_CM_ID',
                  'STRIPE_CMPLN_EML',
                  'STRIPE_CMPLN_MOB',
                  'STRIPE_ERROR_LOG',
@@ -47,7 +48,7 @@ class PayApi {
             $this->supporter = $this->supporter_add ($txn_ref);
             if (STRIPE_CMPLN_EML) {
                 $step = 3;
-                campaign_monitor ($this->supporter);
+                campaign_monitor (STRIPE_CMPLN_EML_CM_ID,$this->supporter);
             }
             if (STRIPE_CMPLN_MOB) {
                 $step = 4;
