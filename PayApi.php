@@ -40,8 +40,12 @@ class PayApi {
     }
 
     public function callback ( ) {
+        $error = null;
         try {
-            $error = null;
+            $step = 0;
+            if (!in_array($_SERVER['REMOTE_ADDR'],$this->callback_valid_ips())) {
+                throw new \Exception ('Unauthorised callback request from '.$_SERVER['REMOTE_ADDR']);
+            }
             $step = 1;
             $this->complete ($txn_ref);
             $step = 2;
@@ -68,10 +72,43 @@ class PayApi {
         error_log ($error);
         mail (
             STRIPE_EMAIL_ERROR,
-            'Stripe sign-up callback error',
+            'Callback error (Stripe)',
             $error
         );
         return false;
+    }
+
+    private function callback_valid_ips ( ) {
+        $c                              = curl_init (STRIPE_CALLBACK_IPS_URL);
+        if (!$c) {
+            throw new \Exception ('Failed to curl_init("'.STRIPE_CALLBACK_IPS_URL.'")');
+            return false;
+        }
+        $s                              = curl_setopt_array (
+            $c,
+            array (
+                CURLOPT_RETURNTRANSFER  => true,
+                CURLOPT_VERBOSE         => false,
+                CURLOPT_NOPROGRESS      => true,
+                CURLOPT_FRESH_CONNECT   => true,
+                CURLOPT_CONNECTTIMEOUT  => STRIPE_CALLBACK_IPS_TO
+            )
+        );
+        if (!$s) {
+            throw new \Exception ('Failed to curl_setopt_array()');
+            return false;
+        }
+        $ips                            = curl_exec ($c);
+        if ($ips===false) {
+            throw new \Exception ('Error: '.curl_error($c));
+            return false;
+        }
+        $ips                            = json_decode ($ips);
+        if (!is_array($ips)) {
+            throw new \Exception ('Error: Stripe response was broken');
+            return false;
+        }
+        return $ips;
     }
 
     private function complete ($txn_ref) {
