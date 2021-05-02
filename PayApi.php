@@ -43,7 +43,8 @@ class PayApi {
         $error = null;
         try {
             $step = 0;
-            if (!in_array($_SERVER['REMOTE_ADDR'],$this->callback_valid_ips())) {
+            $ips = $this->callback_valid_ips ();
+            if (!in_array($_SERVER['REMOTE_ADDR'],$ips)) {
                 throw new \Exception ('Unauthorised callback request from '.$_SERVER['REMOTE_ADDR']);
             }
             $step = 1;
