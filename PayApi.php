@@ -40,6 +40,8 @@ class PayApi {
     }
 
     public function callback ( ) {
+        // Always say OK
+        http_response_code (200);
         $error = null;
         try {
             $step = 0;
@@ -68,15 +70,10 @@ class PayApi {
             return true;
         }
         catch (\Exception $e) {
-            $error = "Error for txn=$txn_ref, step=$step: {$e->getMessage()}";
+            error_log ($e->getMessage());
+            throw new \Exception ("txn=$txn_ref, step=$step: {$e->getMessage()}");
+            return false;
         }
-        error_log ($error);
-        mail (
-            STRIPE_EMAIL_ERROR,
-            'Callback error (Stripe)',
-            $error
-        );
-        return false;
     }
 
     private function callback_valid_ips ( ) {
@@ -201,17 +198,6 @@ class PayApi {
                 throw new \Exception ('Configuration error $c not defined');
                 return false;
             }
-        }
-        $sql                = "SELECT DATABASE() AS `db`";
-        try {
-            $db             = $this->connection->query ($sql);
-            $db             = $db->fetch_assoc ();
-            $this->database = $db['db'];
-        }
-        catch (\mysqli_sql_exception $e) {
-            $this->error_log (123,'SQL select failed: '.$e->getMessage());
-            throw new \Exception ('SQL database error');
-            return false;
         }
     }
 
