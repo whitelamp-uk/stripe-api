@@ -105,11 +105,11 @@ class PayApi {
             return false;
         }
         $ips                            = json_decode ($ips);
-        if (!is_array($ips)) {
+        if (!is_object($ips) || !property_exists($ips,'WEBHOOKS') || !is_array($ips->WEBHOOKS)) {
             throw new \Exception ('Error: Stripe response was broken');
             return false;
         }
-        return $ips;
+        return $ips->WEBHOOKS;
     }
 
     private function complete ($txn_ref) {
