@@ -39,22 +39,32 @@ class PayApi {
     public function __destruct ( ) {
     }
 
-    public function callback ( ) {
-        // Always say OK
-        http_response_code (200);
-        $error = null;
+    public function callback ($sms_msg,&$responded) {
+        $responded          = false;
+        $error              = null;
+        $txn_ref            = null;
         try {
-            $step = 0;
-            $ips = $this->callback_valid_ips ();
-            if (!in_array($_SERVER['REMOTE_ADDR'],$ips)) {
+            $step           = 0;
+            $ips            = $this->callback_valid_ips ();
+            if (!STRIPE_DEV_MODE && !in_array($_SERVER['REMOTE_ADDR'],$ips)) {
                 throw new \Exception ('Unauthorised callback request from '.$_SERVER['REMOTE_ADDR']);
             }
+            // Data is posted JSON
+            $request        = json_decode (trim(file_get_contents('php://input')));
+            if (!is_object($request) || !property_exists($request,'txn_ref')) {
+                throw new \Exception ('Posted data is not valid');
+            }
+            $txn_ref        = $request->txn_ref;
             $step = 1;
             $this->complete ($txn_ref);
-            $step = 2;
-            $this->supporter = $this->supporter_add ($txn_ref);
+            // The payment is now recorded at this end
+            echo "Transaction completed\n";
+            http_response_code (200);
+            $responded      = true;
+            $step           = 2;
+            $this->supporter = $this->supporter_add ($request->txn_ref);
             if (STRIPE_CMPLN_EML) {
-                $step = 3;
+                $step       = 3;
                 campaign_monitor (
                     STRIPE_CMPLN_EML_CM_ID,
                     $this->supporter['To'],
@@ -62,10 +72,13 @@ class PayApi {
                 );
             }
             if (STRIPE_CMPLN_MOB) {
-                $step = 4;
-                // TODO: we need to build a proper message
+                $step       = 4;
+                // TODO: we need to use a proper configured message
                 $message    = print_r ($this->supporter,true);
-                sms ($this->supporter['Mobile'],$message,STRIPE_SMS_FROM);
+                foreach ($this->supporter as $k=>$v) {
+                    $sms_msg = str_replace ("{{".$k."}}",$v,$sms_msg);
+                }
+                sms ($this->supporter['Mobile'],$sms_msg,STRIPE_SMS_FROM);
             }
             return true;
         }
@@ -77,12 +90,12 @@ class PayApi {
     }
 
     private function callback_valid_ips ( ) {
-        $c                              = curl_init (STRIPE_CALLBACK_IPS_URL);
+        $c      = curl_init (STRIPE_CALLBACK_IPS_URL);
         if (!$c) {
             throw new \Exception ('Failed to curl_init("'.STRIPE_CALLBACK_IPS_URL.'")');
             return false;
         }
-        $s                              = curl_setopt_array (
+        $s      = curl_setopt_array (
             $c,
             array (
                 CURLOPT_RETURNTRANSFER  => true,
@@ -96,12 +109,12 @@ class PayApi {
             throw new \Exception ('Failed to curl_setopt_array()');
             return false;
         }
-        $ips                            = curl_exec ($c);
+        $ips    = curl_exec ($c);
         if ($ips===false) {
             throw new \Exception ('Error: '.curl_error($c));
             return false;
         }
-        $ips                            = json_decode ($ips);
+        $ips    = json_decode ($ips);
         if (!is_object($ips) || !property_exists($ips,'WEBHOOKS') || !is_array($ips->WEBHOOKS)) {
             throw new \Exception ('Error: Stripe response was broken');
             return false;
