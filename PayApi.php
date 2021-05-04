@@ -58,9 +58,9 @@ class PayApi {
             $step = 1;
             $this->complete ($txn_ref);
             // The payment is now recorded at this end
-            echo "Transaction completed\n";
             http_response_code (200);
             $responded      = true;
+            echo "Transaction completed\n";
             $step           = 2;
             $this->supporter = $this->supporter_add ($request->txn_ref);
             if (STRIPE_CMPLN_EML) {
