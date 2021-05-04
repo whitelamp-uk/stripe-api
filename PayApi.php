@@ -73,8 +73,6 @@ class PayApi {
             }
             if (STRIPE_CMPLN_MOB) {
                 $step       = 4;
-                // TODO: we need to use a proper configured message
-                $message    = print_r ($this->supporter,true);
                 foreach ($this->supporter as $k=>$v) {
                     $sms_msg = str_replace ("{{".$k."}}",$v,$sms_msg);
                 }
