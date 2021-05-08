@@ -10,17 +10,18 @@ class PayApi {
     private  $connection;
     public   $constants = [
                  'STRIPE_CODE',
-                 'STRIPE_INIT_FILE',
-                 'STRIPE_ADMIN_EMAIL',
-                 'STRIPE_ADMIN_PHONE',
-                 'STRIPE_TERMS',
-                 'STRIPE_PRIVACY',
-                 'STRIPE_EMAIL',
-                 'STRIPE_CMPLN_EML_CM_ID',
-                 'STRIPE_CMPLN_EML',
                  'STRIPE_CMPLN_MOB',
+                 'STRIPE_CMPLN_EML',
+                 'STRIPE_CMPLN_EML_CM_ID',
                  'STRIPE_ERROR_LOG',
-                 'STRIPE_REFNO_OFFSET'
+                 'STRIPE_REFNO_OFFSET',
+                 'STRIPE_SECRET_KEY',
+                 'STRIPE_PUBLIC_KEY',
+                 'STRIPE_DEV_MODE',
+                 'STRIPE_TABLE_MANDATE',
+                 'STRIPE_TABLE_COLLECTION',
+                 'STRIPE_CALLBACK_IPS_URL',
+                 'STRIPE_CALLBACK_IPS_TO'
              ];
     public   $database;
     public   $diagnostic;
