@@ -176,6 +176,7 @@ class PayApi {
         echo $sql;
         try {
             $this->connection->query ($sql);
+            tee ("Output {$this->connection->affected_rows} collections\n");
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (126,'SQL insert failed: '.$e->getMessage());
@@ -187,13 +188,14 @@ class PayApi {
     private function output_mandates ( ) {
         $sql                = "INSERT INTO `".STRIPE_TABLE_MANDATE."`\n";
         $sql               .= file_get_contents (__DIR__.'/select_mandate.sql');
+        $sql                = $this->sql_instantiate ($sql);
         echo $sql;
         try {
             $this->connection->query ($sql);
+            tee ("Output {$this->connection->affected_rows} mandates\n");
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (125,'SQL insert failed: '.$e->getMessage());
-echo $e->getMessage()."\n";
             throw new \Exception ('SQL error');
             return false;
         }
@@ -226,6 +228,8 @@ echo $e->getMessage()."\n";
 
     private function sql_instantiate ($sql) {
         $sql                = str_replace ('{{STRIPE_FROM}}',$this->from,$sql);
+        $sql                = str_replace ('{{STRIPE_CODE}}',STRIPE_CODE,$sql);
+        return $sql;
     }
 
     public function start ( ) {
