@@ -172,7 +172,7 @@ class PayApi {
     private function output_collections ( ) {
         $sql                = "INSERT INTO `".STRIPE_TABLE_COLLECTION."`\n";
         $sql               .= file_get_contents (__DIR__.'/select_collection.sql');
-        $sql                = str_replace ('{{STRIPE_FROM}}',$this->from,$sql);
+        $sql                = $this->sql_instantiate ($sql);
         echo $sql;
         try {
             $this->connection->query ($sql);
@@ -193,6 +193,7 @@ class PayApi {
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (125,'SQL insert failed: '.$e->getMessage());
+echo $e->getMessage()."\n";
             throw new \Exception ('SQL error');
             return false;
         }
@@ -210,6 +211,21 @@ class PayApi {
                 return false;
             }
         }
+        $sql                = "SELECT DATABASE() AS `db`";
+        try {
+            $db             = $this->connection->query ($sql);
+            $db             = $db->fetch_assoc ();
+            $this->database = $db['db'];
+        }
+        catch (\mysqli_sql_exception $e) {
+            $this->error_log (117,'SQL select failed: '.$e->getMessage());
+            throw new \Exception ('SQL database error');
+            return false;
+        }
+    }
+
+    private function sql_instantiate ($sql) {
+        $sql                = str_replace ('{{STRIPE_FROM}}',$this->from,$sql);
     }
 
     public function start ( ) {

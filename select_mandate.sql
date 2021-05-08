@@ -1,27 +1,28 @@
 -- Must be a single select query
 SELECT
-  '{{STRIPE_PROVIDER}}'
+  '{{STRIPE_CODE}}'
  ,null
- ,`TransactionRef`
- ,`ClientRef`
- ,`Created`
- ,`Updated`
- ,`FirstDrawClose`
+ ,`refno`
+ ,`cref`
+ ,`created`
+ ,`paid`
+ ,DATE_ADD(DATE(`paid`),INTERVAL 1 DAY)
  ,'LIVE'
- ,'Monthly'
- ,`Amount`
- ,`Chances`
- ,`Name`
- ,'{{STRIPE_PROVIDER}}'
+ ,'Single'
+ ,`amount`
+ ,`quantity`
+ ,CONCAT_WS(' ',`title`,`name_first`,`name_last`)
+ ,''
  ,''
  ,''
  ,`id`
  ,1
- ,`Created`
- ,`Created`
+ ,`created`
+ ,`created`
 FROM `stripe_payment`
-WHERE `Created` IS NOT NULL
-  AND `Created`>='{{STRIPE_FROM}}'
+WHERE `created` IS NOT NULL
+  AND `created`>='{{STRIPE_FROM}}'
+  AND `paid` IS NOT NULL
 ORDER BY `id`
 ;
 
