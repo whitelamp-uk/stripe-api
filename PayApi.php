@@ -29,6 +29,7 @@ class PayApi {
     public   $errorCode = 0;
     private  $from;
     private  $org;
+    public   $signup_done_message = ';Thanks';
     public   $supporter = [];
 
     private  $txn_ref;
@@ -76,7 +77,7 @@ class PayApi {
                 http_response_code(400);
                 exit();
             }
-            error_log(print_r($request, true));
+            //error_log(print_r($request, true));
 
             // Data is posted JSON
             //$request        = json_decode (trim($postdata));
@@ -264,6 +265,17 @@ class PayApi {
             $db             = $this->connection->query ($sql);
             $db             = $db->fetch_assoc ();
             $this->database = $db['db'];
+        }
+        catch (\mysqli_sql_exception $e) {
+            $this->error_log (117,'SQL select failed: '.$e->getMessage());
+            throw new \Exception ('SQL database error');
+            return false;
+        }
+        $sql                = "SELECT signup_done_message FROM blotto_config.blotto_org WHERE id = ".BLOTTO_ORG_ID;
+        try {
+            $sdm             = $this->connection->query ($sql);
+            $sdm             = $sdm->fetch_assoc ();
+            $this->signup_done_message = $sdm['signup_done_message'];
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (117,'SQL select failed: '.$e->getMessage());

@@ -70,7 +70,7 @@ var payWithCard = function(stripe, card, clientSecret) {
 var orderComplete = function(paymentIntentId) {
   loading(false);
   document
-    .querySelector(".result-message a")
+    .querySelector(".old-result-message a")
     .setAttribute(
       "href",
       "https://dashboard.stripe.com/test/payments/" + paymentIntentId
