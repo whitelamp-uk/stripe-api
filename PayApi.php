@@ -48,16 +48,39 @@ class PayApi {
         $txn_ref            = null;
         try {
             $step           = 0;
+
             // https://stripe.com/docs/webhooks/signatures has some code - if using signatures I don't think
             // we need to check IPs
             $ips            = $this->callback_valid_ips ();
             if (!STRIPE_DEV_MODE && !in_array($_SERVER['REMOTE_ADDR'],$ips)) {
                 throw new \Exception ('Unauthorised callback request from '.$_SERVER['REMOTE_ADDR']);
             }
-            // Data is posted JSON
-            // https://stripe.com/docs/webhooks/signatures has some code.
+
+            Stripe::setApiKey(STRIPE_SECRET_KEY);
+
             $postdata = file_get_contents('php://input');
-            $request        = json_decode (trim($postdata));
+
+            $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'];
+            $event = null;
+
+            try {
+                $request = \Stripe\Webhook::constructEvent(
+                    $postdata, $sig_header, STRIPE_WHSEC
+                );
+            } catch(\UnexpectedValueException $e) {
+                // Invalid payload
+                http_response_code(400);
+                exit();
+            } catch(\Stripe\Exception\SignatureVerificationException $e) {
+                // Invalid signature
+                http_response_code(400);
+                exit();
+            }
+            error_log(print_r($request, true));
+
+            // Data is posted JSON
+            //$request        = json_decode (trim($postdata));
+
             if (!is_object($request) || !isset($request->data->object->metadata->payment_id)) {
                 error_log(var_export($request, true));
                 error_log(var_export($request->data, true));
@@ -142,8 +165,8 @@ class PayApi {
                 UPDATE `stripe_payment`
                 SET
                   `paid`=NOW()
-                 ,`refno`={$this->refno()}
-                 ,`cref`='{$this->cref()}'
+                 ,`refno`={$this->refno($payment_id)}
+                 ,`cref`='{$this->cref($payment_id)}'
                 WHERE `id`='$payment_id'
                 LIMIT 1
               "
@@ -325,7 +348,7 @@ class PayApi {
         // Insert a supporter, a player and a contact
         signup ($s,STRIPE_CODE,$s['cref']);
         // Add tickets here so that they can be emailed/texted
-        $tickets            = tickets (STRIPE_CODE,$s['refno'],$cref,$s['quantity']);
+        $tickets            = tickets (STRIPE_CODE,$s['refno'],$s['cref'],$s['quantity']);
         $draw_first         = new \DateTime (draw_first($s['created'],STRIPE_CODE));
         $one_day_interval   = new \DateInterval ('P1D');
         $draw_first->add ($one_day_interval);
