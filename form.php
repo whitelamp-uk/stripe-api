@@ -23,11 +23,9 @@
             <script type="text/javascript">
                 var stripe = Stripe('<?php echo STRIPE_PUBLIC_KEY ?>');
                 var clientSecret = "<?php echo $intent->client_secret ?>";
-                var postcode = "<?php echo $_POST['postcode'] ?>";
+                var postcode = "<?php echo $v['postcode'] ?>";
                 console.log ("in form.php postcode is " + postcode);
-                var purchase = {
-                  items: [{ id: "xl-tshirt" }]
-                };
+                //var purchase = {                  items: [{ id: "xl-tshirt" }]                };
                 <?php require __DIR__.'/client.js'; ?>
                 /*var elements = stripe.elements();
                 var style = {

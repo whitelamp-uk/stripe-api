@@ -45,44 +45,55 @@ class PayApi {
         $txn_ref            = null;
         try {
             $step           = 0;
+            // https://stripe.com/docs/webhooks/signatures has some code - if using signatures I don't think
+            // we need to check IPs
             $ips            = $this->callback_valid_ips ();
             if (!STRIPE_DEV_MODE && !in_array($_SERVER['REMOTE_ADDR'],$ips)) {
                 throw new \Exception ('Unauthorised callback request from '.$_SERVER['REMOTE_ADDR']);
             }
             // Data is posted JSON
-            $request        = json_decode (trim(file_get_contents('php://input')));
-            if (!is_object($request) || !property_exists($request,'txn_ref')) {
+            // https://stripe.com/docs/webhooks/signatures has some code.
+            $postdata = file_get_contents('php://input');
+            $request        = json_decode (trim($postdata));
+            if (!is_object($request) || !isset($request->data->object->metadata->payment_id)) {
+                error_log(var_export($request, true));
+                error_log(var_export($request->data, true));
+                error_log(var_export($request->data, true));
                 throw new \Exception ('Posted data is not valid');
             }
-            $txn_ref        = $request->txn_ref;
+            $payment_id      = $request->data->object->metadata->payment_id;
             $step = 1;
-            $this->complete ($txn_ref);
             // The payment is now recorded at this end
             http_response_code (200);
-            $responded      = true;
-            echo "Transaction completed\n";
-            $step           = 2;
-            $this->supporter = $this->supporter_add ($request->txn_ref);
-            if (STRIPE_CMPLN_EML) {
-                $step       = 3;
-                campaign_monitor (
-                    STRIPE_CMPLN_EML_CM_ID,
-                    $this->supporter['To'],
-                    $this->supporter
-                );
-            }
-            if (STRIPE_CMPLN_MOB) {
-                $step       = 4;
-                foreach ($this->supporter as $k=>$v) {
-                    $sms_msg = str_replace ("{{".$k."}}",$v,$sms_msg);
+            if ($request->type == 'charge.succeeded') {
+                $this->complete ($payment_id);
+                $responded      = true;
+                echo "Transaction completed\n";
+                $step           = 2;
+                $this->supporter = $this->supporter_add ($payment_id);
+                if (STRIPE_CMPLN_EML) {
+                    $step       = 3;
+                    campaign_monitor (
+                        STRIPE_CMPLN_EML_CM_ID,
+                        $this->supporter['To'],
+                        $this->supporter
+                    );
                 }
-                sms ($this->supporter['Mobile'],$sms_msg,STRIPE_SMS_FROM);
+                if (STRIPE_CMPLN_MOB) {
+                    $step       = 4;
+                    foreach ($this->supporter as $k=>$v) {
+                        $sms_msg = str_replace ("{{".$k."}}",$v,$sms_msg);
+                    }
+                    sms ($this->supporter['Mobile'],$sms_msg,STRIPE_SMS_FROM);
+                }
+            } else {
+                error_log(print_r($request->type, true));
             }
             return true;
         }
         catch (\Exception $e) {
             error_log ($e->getMessage());
-            throw new \Exception ("txn=$txn_ref, step=$step: {$e->getMessage()}");
+            throw new \Exception ("stripe payment id =$payment_id, step=$step: {$e->getMessage()}");
             return false;
         }
     }
@@ -120,10 +131,18 @@ class PayApi {
         return $ips->WEBHOOKS;
     }
 
-    private function complete ($txn_ref) {
+    private function complete ($payment_id) {
         try {
             $this->connection->query (
-                "UPDATE `stripe_payment` SET `paid`=NOW() WHERE `txn_ref`='$txn_ref' LIMIT 1"
+              "
+                UPDATE `stripe_payment`
+                SET
+                  `paid`=NOW()
+                 ,`refno`={$this->refno()}
+                 ,`cref`='{$this->cref()}'
+                WHERE `id`='$payment_id'
+                LIMIT 1
+              "
             );
         }
         catch (\mysqli_sql_exception $e) {
@@ -164,7 +183,7 @@ class PayApi {
     public function import ($from) {
         $from               = new \DateTime ($from);
         $this->from         = $from->format ('Y-m-d');
-        $this->execute (__DIR__.'/create_payment.sql');
+        $this->execute (__DIR__.'/create_payment.sql');  // this creates the table? Yes (if not exists)
         $this->output_mandates ();
         $this->output_collections ();
     }
@@ -212,33 +231,68 @@ class PayApi {
         }
     }
 
-    public function start ( ) {
+    public function start (&$e) {
         // $this->txn_ref = something unique to go in button
-        $this->txn_ref = uniqid ();
         Stripe::setApiKey(STRIPE_SECRET_KEY);
         $v = www_signup_vars ();
-        // Insert into stripe_payment leaving especially `Paid` and `Created` as null
-
-        $amount = $v['quantity'] * $v['draws'] * BLOTTO_TICKET_PRICE;
+        foreach ($v as $key => $val) {
+            $v[$key] = $this->connection->real_escape_string($val);
+        }
+        $amount = intval($v['quantity']) * intval($v['draws']) * BLOTTO_TICKET_PRICE;
+        $pounds_amount = $amount / 100;
+        // Insert into stripe_payment leaving especially `paid` as null
+        $sql = "INSERT INTO `stripe_payment` SET
+          `quantity` = '{$v['quantity']}',
+          `draws` = '{$v['draws']}',
+          `amount` = '{$pounds_amount}',
+          `title` = '{$v['title']}',
+          `name_first` = '{$v['first_name']}',
+          `name_last` = '{$v['last_name']}',
+          `dob` = '{$v['dob']}',
+          `email` = '{$v['email']}',
+          `mobile` = '{$v['mobile']}',
+          `telephone` = '{$v['telephone']}',
+          `postcode` = '{$v['postcode']}',
+          `address_1` = '{$v['address_1']}',
+          `address_2` = '{$v['address_2']}',
+          `address_3` = '{$v['address_3']}',
+          `town` = '{$v['town']}',
+          `county` = '{$v['county']}',
+          `gdpr` = '{$v['gdpr']}',
+          `terms` = '{$v['terms']}',
+          `pref_1` = '{$v['pref_1']}',
+          `pref_2` = '{$v['pref_2']}',
+          `pref_3` = '{$v['pref_3']}',
+          `pref_4` = '{$v['pref_4']}'
+        ";
+        try {
+            $this->connection->query ($sql);
+            $newid = $this->connection->insert_id;
+        }
+        catch (\mysqli_sql_exception $e) {
+            $this->error_log (122,'SQL insert failed: '.$e->getMessage());
+            $e[] = 'Sorry something went wrong - please try later';
+            return;
+        }
         $intent = PaymentIntent::create([
           'amount' => $amount,
           'currency' => 'gbp',
           'description' => STRIPE_DESCRIPTION,
           // DL: The docs seem to say metadata is optional and arbitrary; poss required when doing development...
           // Verify your integration in this guide by including this parameter
-          'metadata' => ['integration_check' => 'accept_a_payment'],
+          'metadata' => ['integration_check' => 'accept_a_payment', 'payment_id' => $newid],
         ]);
         require __DIR__.'/form.php';
     }
 
-    private function supporter_add ($txn_ref) {
+    private function supporter_add ($payment_id) {
         try {
             $s = $this->connection->query (
-              "SELECT * FROM `stripe_payment` WHERE `txn_ref`='$txn_ref' LIMIT 0,1"
+              "SELECT * FROM `stripe_payment` WHERE `id`='$payment_id' LIMIT 0,1"
             );
             $s = $s->fetch_assoc ();
             if (!$s) {
-                throw new \Exception ("Transaction reference '$txn_ref' was not identified");
+                throw new \Exception ("stripe_payment id '$payment_id' was not found");
             }
         }
         catch (\mysqli_sql_exception $e) {
@@ -247,21 +301,21 @@ class PayApi {
             return false;
         }
         // Insert a supporter, a player and a contact
-        $cref               = $this->cref ($s['id']);
-        signup ($s,STRIPE_CODE,$cref);
+        signup ($s,STRIPE_CODE,$s['cref']);
         // Add tickets here so that they can be emailed/texted
-        $tickets            = tickets (STRIPE_CODE,$this->refno($s['id']),$cref,$s['chances']);
+        $tickets            = tickets (STRIPE_CODE,$s['refno'],$cref,$s['quantity']);
         $draw_first         = new \DateTime (draw_first($s['created'],STRIPE_CODE));
-        $draw_first->add ('P1D');
+        $one_day_interval   = new \DateInterval('P1D');
+        $draw_first->add ($one_day_interval);
         return [
-            'To'            => $s['first_name'].' '.$s['last_name'].' <'.$s['email'].'>',
+            'To'            => $s['name_first'].' '.$s['name_last'].' <'.$s['email'].'>',
             'Title'         => $s['title'],
-            'Name'          => $s['first_name'].' '.$s['last_name'],
+            'Name'          => $s['name_first'].' '.$s['name_last'],
             'Email'         => $s['email'],
-            'Mobile'        => $s['first_name'],
-            'First_Name'    => $s['first_name'],
-            'Last_Name'     => $s['last_name'],
-            'Reference'     => $cref,
+            'Mobile'        => $s['mobile'],
+            'First_Name'    => $s['name_first'],
+            'Last_Name'     => $s['name_last'],
+            'Reference'     => $s['cref'],
             'Chances'       => $s['quantity'],
             'Tickets'       => implode (',',$tickets),
             'Draws'         => $s['draws'],
