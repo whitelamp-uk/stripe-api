@@ -10,17 +10,18 @@ class PayApi {
     private  $connection;
     public   $constants = [
                  'STRIPE_CODE',
-                 'STRIPE_INIT_FILE',
-                 'STRIPE_ADMIN_EMAIL',
-                 'STRIPE_ADMIN_PHONE',
-                 'STRIPE_TERMS',
-                 'STRIPE_PRIVACY',
-                 'STRIPE_EMAIL',
-                 'STRIPE_CMPLN_EML_CM_ID',
-                 'STRIPE_CMPLN_EML',
                  'STRIPE_CMPLN_MOB',
+                 'STRIPE_CMPLN_EML',
+                 'STRIPE_CMPLN_EML_CM_ID',
                  'STRIPE_ERROR_LOG',
-                 'STRIPE_REFNO_OFFSET'
+                 'STRIPE_REFNO_OFFSET',
+                 'STRIPE_SECRET_KEY',
+                 'STRIPE_PUBLIC_KEY',
+                 'STRIPE_DEV_MODE',
+                 'STRIPE_TABLE_MANDATE',
+                 'STRIPE_TABLE_COLLECTION',
+                 'STRIPE_CALLBACK_IPS_URL',
+                 'STRIPE_CALLBACK_IPS_TO'
              ];
     public   $database;
     public   $diagnostic;
@@ -191,10 +192,11 @@ class PayApi {
     private function output_collections ( ) {
         $sql                = "INSERT INTO `".STRIPE_TABLE_COLLECTION."`\n";
         $sql               .= file_get_contents (__DIR__.'/select_collection.sql');
-        $sql                = str_replace ('{{STRIPE_FROM}}',$this->from,$sql);
+        $sql                = $this->sql_instantiate ($sql);
         echo $sql;
         try {
             $this->connection->query ($sql);
+            tee ("Output {$this->connection->affected_rows} collections\n");
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (126,'SQL insert failed: '.$e->getMessage());
@@ -206,9 +208,11 @@ class PayApi {
     private function output_mandates ( ) {
         $sql                = "INSERT INTO `".STRIPE_TABLE_MANDATE."`\n";
         $sql               .= file_get_contents (__DIR__.'/select_mandate.sql');
+        $sql                = $this->sql_instantiate ($sql);
         echo $sql;
         try {
             $this->connection->query ($sql);
+            tee ("Output {$this->connection->affected_rows} mandates\n");
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (125,'SQL insert failed: '.$e->getMessage());
@@ -229,6 +233,23 @@ class PayApi {
                 return false;
             }
         }
+        $sql                = "SELECT DATABASE() AS `db`";
+        try {
+            $db             = $this->connection->query ($sql);
+            $db             = $db->fetch_assoc ();
+            $this->database = $db['db'];
+        }
+        catch (\mysqli_sql_exception $e) {
+            $this->error_log (117,'SQL select failed: '.$e->getMessage());
+            throw new \Exception ('SQL database error');
+            return false;
+        }
+    }
+
+    private function sql_instantiate ($sql) {
+        $sql                = str_replace ('{{STRIPE_FROM}}',$this->from,$sql);
+        $sql                = str_replace ('{{STRIPE_CODE}}',STRIPE_CODE,$sql);
+        return $sql;
     }
 
     public function start (&$e) {

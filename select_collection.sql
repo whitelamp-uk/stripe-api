@@ -1,13 +1,14 @@
 -- Must be a single select query
 SELECT
-  `Created`
- ,'{{STRIPE_PROVIDER}}'
+  `created`
+ ,'{{STRIPE_CODE}}'
  ,null
- ,`TransactionRef`
- ,`ClientRef`
- ,`Amount`
+ ,`refno`
+ ,`cref`
+ ,`amount`
 FROM `stripe_payment`
-WHERE `Created` IS NOT NULL
-  AND `Created`>='{{STRIPE_FROM}}'
+WHERE `created` IS NOT NULL
+  AND `created`>='{{STRIPE_FROM}}'
+  AND `paid` IS NOT NULL
 ORDER BY `id`
 ;
