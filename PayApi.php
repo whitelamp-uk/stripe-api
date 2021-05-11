@@ -210,7 +210,6 @@ class PayApi {
     public function import ($from) {
         $from               = new \DateTime ($from);
         $this->from         = $from->format ('Y-m-d');
-        $this->execute (__DIR__.'/create_payment.sql');  // this creates the table? Yes (if not exists)
         $this->output_mandates ();
         $this->output_collections ();
     }
@@ -264,6 +263,8 @@ class PayApi {
             $db             = $this->connection->query ($sql);
             $db             = $db->fetch_assoc ();
             $this->database = $db['db'];
+            // Create the table if not exists
+            $this->execute (__DIR__.'/create_payment.sql');
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (117,'SQL select failed: '.$e->getMessage());
