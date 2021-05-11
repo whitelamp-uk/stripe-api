@@ -3,14 +3,13 @@
 -- A persistent table in BLOTTO_MAKE_DB
 CREATE TABLE IF NOT EXISTS `stripe_payment` (
   `id` INT (11) NOT NULL AUTO_INCREMENT,
-  `txn_ref` varchar(255) CHARACTER SET ascii DEFAULT NULL,
   `paid` datetime DEFAULT NULL,
   `quantity` tinyint(3) unsigned NOT NULL,
   `draws` tinyint(3) unsigned NOT NULL,
   `amount` decimal(10,2) DEFAULT NULL,
   `title` varchar(255) NOT NULL,
-  `first_name` varchar(255) NOT NULL,
-  `last_name` varchar(255) NOT NULL,
+  `name_first` varchar(255) NOT NULL,
+  `name_last` varchar(255) NOT NULL,
   `dob` date NOT NULL,
   `email` varchar(255) NOT NULL,
   `mobile` varchar(255) NOT NULL,
@@ -29,7 +28,6 @@ CREATE TABLE IF NOT EXISTS `stripe_payment` (
   `pref_4` varchar(255) NOT NULL,
   `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `txn_ref` (`txn_ref`),
   KEY `created` (`created`),
   KEY `paid` (`paid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
