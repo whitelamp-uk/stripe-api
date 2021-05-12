@@ -2,9 +2,10 @@
             <form id="payment-form">
             <?php if (defined('STRIPE_DEV_MODE') && STRIPE_DEV_MODE) { ?>
                 <table>
-                <tr><td>Payment succeeds</td><td>4000 0582 6000 0005</td></tr>
-                <tr><td>Payment requires authentication</td><td>4000 0025 0000 3155</td></tr>
-                <tr><td>Payment is declined</td><td>4000 0000 0000 9995</td></tr>
+                <tr><td>A: Payment succeeds</td><td>4000 0582 6000 0005</td></tr>
+                <tr><td>B: Payment requires authentication</td><td>4000 0025 0000 3155</td></tr>
+                <tr><td>C: Payment is declined</td><td>4000 0000 0000 9995</td></tr>
+                <tr><td colspan="2"><small>For A, use UK postcode. For B &amp; C use ZIP ("12345" or similar).</small></td></tr>
                 </table>
             <?php } ?>
 

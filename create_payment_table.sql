@@ -3,9 +3,11 @@
 -- A persistent table in BLOTTO_MAKE_DB
 CREATE TABLE IF NOT EXISTS `stripe_payment` (
   `id` INT (11) NOT NULL AUTO_INCREMENT,
-  `paid` datetime DEFAULT NULL,
+  `callback_at` datetime DEFAULT NULL,
   `refno` bigint(20) unsigned DEFAULT NULL,
   `cref` varchar(255) CHARACTER SET ascii DEFAULT NULL,
+  `failure_code` varchar(255) CHARACTER SET ascii DEFAULT NULL,
+  `failure_message` varchar(255) CHARACTER SET ascii DEFAULT NULL,
   `quantity` tinyint(3) unsigned NOT NULL,
   `draws` tinyint(3) unsigned NOT NULL,
   `amount` decimal(10,2) DEFAULT NULL,
@@ -31,7 +33,7 @@ CREATE TABLE IF NOT EXISTS `stripe_payment` (
   `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `created` (`created`),
-  KEY `paid` (`paid`)
+  KEY `callback_at` (`callback_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
 ;
 

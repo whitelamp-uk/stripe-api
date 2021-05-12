@@ -93,10 +93,10 @@ class PayApi {
             // The payment is now recorded at this end
             http_response_code (200);
             if ($event->type == 'charge.succeeded') {
+                $step           = 2;
                 $this->complete ($payment_id);
                 $responded      = true;
                 echo "Transaction completed\n";
-                $step           = 2;
                 $this->supporter = $this->supporter_add ($payment_id);
                 if (STRIPE_CMPLN_EML) {
                     $step       = 3;
@@ -108,12 +108,29 @@ class PayApi {
                 }
                 if (STRIPE_CMPLN_MOB) {
                     $step       = 4;
-                    $sms_msg    = $this->org['signup_sms_message'];
+                    $sql                = "SELECT signup_sms_message FROM blotto_config.blotto_org WHERE id = ".BLOTTO_ORG_ID;
+                    try {
+                        $ssm             = $this->connection->query ($sql);
+                        $ssm             = $ssm->fetch_assoc ();
+                        $sms_msg = $ssm['signup_sms_message'];
+                    }
+                    catch (\mysqli_sql_exception $e) {
+                        $this->error_log (117,'SQL select failed: '.$e->getMessage());
+                        throw new \Exception ('SQL database error');
+                        return false;
+                    }
+
                     foreach ($this->supporter as $k=>$v) {
                         $sms_msg = str_replace ("{{".$k."}}",$v,$sms_msg);
                     }
                     sms ($this->supporter['Mobile'],$sms_msg,STRIPE_SMS_FROM);
                 }
+            } else if ($event->type == 'charge.failed') {
+                $step           = 10;
+                $this->fail ($payment_id, $event->data->object->failure_code, $event->data->object->failure_message);
+
+                $responded      = true;
+                echo "Transaction failed\n";
             } else {
                 error_log(print_r($event->type, true));
             }
@@ -165,7 +182,7 @@ class PayApi {
               "
                 UPDATE `stripe_payment`
                 SET
-                  `paid`=NOW()
+                  `callback_at`=NOW()
                  ,`refno`={$this->refno($payment_id)}
                  ,`cref`='{$this->cref($payment_id)}'
                 WHERE `id`='$payment_id'
@@ -174,7 +191,7 @@ class PayApi {
             );
         }
         catch (\mysqli_sql_exception $e) {
-            $this->error_log (122,'SQL select failed: '.$e->getMessage());
+            $this->error_log (122,'SQL update failed: '.$e->getMessage());
             throw new \Exception ('SQL error');
             return false;
         }
@@ -206,6 +223,27 @@ class PayApi {
             return false;
         }
         return $output;
+    }
+
+    private function fail ($payment_id,$failure_code,$failure_message) {
+        try {
+            $this->connection->query (
+              "
+                UPDATE `stripe_payment`
+                SET
+                  `callback_at`=NOW()
+                 ,`failure_code`='{$failure_code}'
+                 ,`failure_message`='{$failure_message}'
+                WHERE `id`='$payment_id'
+                LIMIT 1
+              "
+            );
+        }
+        catch (\mysqli_sql_exception $e) {
+            $this->error_log (128,'SQL update failed: '.$e->getMessage());
+            throw new \Exception ('SQL error');
+            return false;
+        }
     }
 
     public function import ($from) {
@@ -265,7 +303,7 @@ class PayApi {
             $db             = $db->fetch_assoc ();
             $this->database = $db['db'];
             // Create the table if not exists
-            $this->execute (__DIR__.'/create_payment.sql');
+            //$this->execute (__DIR__.'/create_payment_table.sql');
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (117,'SQL select failed: '.$e->getMessage());
