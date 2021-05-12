@@ -13,6 +13,7 @@ class PayApi {
                  'STRIPE_CMPLN_MOB',
                  'STRIPE_CMPLN_EML',
                  'STRIPE_CMPLN_EML_CM_ID',
+                 'STRIPE_DESCRIPTION',
                  'STRIPE_ERROR_LOG',
                  'STRIPE_REFNO_OFFSET',
                  'STRIPE_SECRET_KEY',
