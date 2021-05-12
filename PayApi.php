@@ -65,7 +65,7 @@ class PayApi {
             $event = null;
 
             try {
-                $request = \Stripe\Webhook::constructEvent(
+                $event = \Stripe\Webhook::constructEvent(
                     $postdata, $sig_header, STRIPE_WHSEC
                 );
             } catch(\UnexpectedValueException $e) {
@@ -77,22 +77,22 @@ class PayApi {
                 http_response_code(400);
                 exit();
             }
-            //error_log(print_r($request, true));
+            error_log(print_r($event, true));
 
             // Data is posted JSON
-            //$request        = json_decode (trim($postdata));
+            //$event        = json_decode (trim($postdata));
 
-            if (!is_object($request) || !isset($request->data->object->metadata->payment_id)) {
-                error_log(var_export($request, true));
-                error_log(var_export($request->data, true));
-                error_log(var_export($request->data, true));
+            if (!is_object($event) || !isset($event->data->object->metadata->payment_id)) {
+                error_log(var_export($event, true));
+                error_log(var_export($event->data, true));
+                error_log(var_export($event->data, true));
                 throw new \Exception ('Posted data is not valid');
             }
-            $payment_id      = $request->data->object->metadata->payment_id;
+            $payment_id      = $event->data->object->metadata->payment_id;
             $step = 1;
             // The payment is now recorded at this end
             http_response_code (200);
-            if ($request->type == 'charge.succeeded') {
+            if ($event->type == 'charge.succeeded') {
                 $this->complete ($payment_id);
                 $responded      = true;
                 echo "Transaction completed\n";
@@ -115,7 +115,7 @@ class PayApi {
                     sms ($this->supporter['Mobile'],$sms_msg,STRIPE_SMS_FROM);
                 }
             } else {
-                error_log(print_r($request->type, true));
+                error_log(print_r($event->type, true));
             }
             return true;
         }
