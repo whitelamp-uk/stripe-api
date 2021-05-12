@@ -11,6 +11,7 @@ define ( 'STRIPE_CMPLN_EML',        true        ); // Send completion message by
 define ( 'STRIPE_CMPLN_EML_CM_ID',  ''          );
 define ( 'STRIPE_ERROR_LOG',        false       );
 define ( 'STRIPE_REFNO_OFFSET',     100000000   );
+define ( 'STRIPE_DESCRIPTION',      'My Org Lottery'    );
 define ( 'STRIPE_SECRET_KEY',       ''          );
 define ( 'STRIPE_PUBLIC_KEY',       ''          );
 define ( 'STRIPE_DEV_MODE',         true        );
