@@ -211,7 +211,6 @@ class PayApi {
     public function import ($from) {
         $from               = new \DateTime ($from);
         $this->from         = $from->format ('Y-m-d');
-        $this->execute (__DIR__.'/create_payment.sql');  // this creates the table? Yes (if not exists)
         $this->output_mandates ();
         $this->output_collections ();
     }
@@ -265,6 +264,8 @@ class PayApi {
             $db             = $this->connection->query ($sql);
             $db             = $db->fetch_assoc ();
             $this->database = $db['db'];
+            // Create the table if not exists
+            $this->execute (__DIR__.'/create_payment.sql');
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (117,'SQL select failed: '.$e->getMessage());
@@ -291,15 +292,13 @@ class PayApi {
     }
 
     public function start (&$e) {
-        // $this->txn_ref = something unique to go in button
         Stripe::setApiKey(STRIPE_SECRET_KEY);
         $v = www_signup_vars ();
         foreach ($v as $key => $val) {
-            $v[$key] = $this->connection->real_escape_string($val);
+            $v[$key] = $this->connection->real_escape_string ($val);
         }
         $amount = intval($v['quantity']) * intval($v['draws']) * BLOTTO_TICKET_PRICE;
-        $pounds_amount = $amount / 100;
-        // Insert into stripe_payment leaving especially `paid` as null
+        $pounds_amount = number_format ($amount/100,2,'.','');
         $sql = "INSERT INTO `stripe_payment` SET
           `quantity` = '{$v['quantity']}',
           `draws` = '{$v['draws']}',
@@ -364,7 +363,7 @@ class PayApi {
         // Add tickets here so that they can be emailed/texted
         $tickets            = tickets (STRIPE_CODE,$s['refno'],$s['cref'],$s['quantity']);
         $draw_first         = new \DateTime (draw_first($s['created'],STRIPE_CODE));
-        $one_day_interval   = new \DateInterval('P1D');
+        $one_day_interval   = new \DateInterval ('P1D');
         $draw_first->add ($one_day_interval);
         return [
             'To'            => $s['name_first'].' '.$s['name_last'].' <'.$s['email'].'>',
