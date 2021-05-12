@@ -69,16 +69,18 @@ class PayApi {
                 $event = \Stripe\Webhook::constructEvent(
                     $postdata, $sig_header, STRIPE_WHSEC
                 );
-            } catch(\UnexpectedValueException $e) {
+            }
+            catch (\UnexpectedValueException $e) {
                 // Invalid payload
-                http_response_code(400);
-                exit();
-            } catch(\Stripe\Exception\SignatureVerificationException $e) {
-                // Invalid signature
-                http_response_code(400);
+                http_response_code (400);
                 exit();
             }
-            error_log(print_r($event, true));
+            catch (\Stripe\Exception\SignatureVerificationException $e) {
+                // Invalid signature
+                http_response_code (400);
+                exit ();
+            }
+            error_log (print_r($event,true));
 
             // Data is posted JSON
             //$event        = json_decode (trim($postdata));
@@ -109,30 +111,21 @@ class PayApi {
                 }
                 if (STRIPE_CMPLN_MOB) {
                     $step       = 4;
-                    $sql                = "SELECT signup_sms_message FROM blotto_config.blotto_org WHERE id = ".BLOTTO_ORG_ID;
-                    try {
-                        $ssm             = $this->connection->query ($sql);
-                        $ssm             = $ssm->fetch_assoc ();
-                        $sms_msg = $ssm['signup_sms_message'];
-                    }
-                    catch (\mysqli_sql_exception $e) {
-                        $this->error_log (117,'SQL select failed: '.$e->getMessage());
-                        throw new \Exception ('SQL database error');
-                        return false;
-                    }
-
+                    $sms_msg  = $this->org['signup_sms_message'];
                     foreach ($this->supporter as $k=>$v) {
                         $sms_msg = str_replace ("{{".$k."}}",$v,$sms_msg);
                     }
                     sms ($this->supporter['Mobile'],$sms_msg,STRIPE_SMS_FROM);
                 }
-            } else if ($event->type == 'charge.failed') {
+            }
+            elseif ($event->type == 'charge.failed') {
                 $step           = 10;
                 $this->fail ($payment_id, $event->data->object->failure_code, $event->data->object->failure_message);
 
                 $responded      = true;
                 echo "Transaction failed\n";
-            } else {
+            }
+            else {
                 error_log(print_r($event->type, true));
             }
             return true;
