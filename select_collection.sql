@@ -7,8 +7,8 @@ SELECT
  ,`cref`
  ,`amount`
 FROM `stripe_payment`
-WHERE `created` IS NOT NULL
-  AND `created`>='{{STRIPE_FROM}}'
-  AND `paid` IS NOT NULL
+WHERE `created`>='{{STRIPE_FROM}}'
+  AND `callback_at` IS NOT NULL
+  AND LENGTH(`failure_code`)>0
 ORDER BY `id`
 ;

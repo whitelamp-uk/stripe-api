@@ -125,7 +125,7 @@ If using signatures I don't think we need to check IPs
         }
         catch (\Exception $e) {
             error_log ($e->getMessage());
-            throw new \Exception ("stripe payment id =$payment_id, step=$step: {$e->getMessage()}");
+            throw new \Exception ("stripe payment_id=$payment_id, step=$step: {$e->getMessage()}");
             return false;
         }
     }

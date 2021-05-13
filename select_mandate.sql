@@ -7,7 +7,7 @@ SELECT
  ,`created`
  ,`paid`
  ,DATE_ADD(DATE(`paid`),INTERVAL 1 DAY)
- ,'LIVE'
+ ,IF(LENGTH(`failure_code`)>0,'FAILED','LIVE')
  ,'Single'
  ,`amount`
  ,`quantity`
@@ -20,9 +20,8 @@ SELECT
  ,`created`
  ,`created`
 FROM `stripe_payment`
-WHERE `created` IS NOT NULL
-  AND `created`>='{{STRIPE_FROM}}'
-  AND `paid` IS NOT NULL
+WHERE `created`>='{{STRIPE_FROM}}'
+  AND `callback_at` IS NOT NULL
 ORDER BY `id`
 ;
 
