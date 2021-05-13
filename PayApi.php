@@ -22,7 +22,8 @@ class PayApi {
                  'STRIPE_TABLE_MANDATE',
                  'STRIPE_TABLE_COLLECTION',
                  'STRIPE_CALLBACK_IPS_URL',
-                 'STRIPE_CALLBACK_IPS_TO'
+                 'STRIPE_CALLBACK_IPS_TO',
+                 'STRIPE_WHSEC'
              ];
     public   $database;
     public   $diagnostic;
@@ -50,88 +51,75 @@ class PayApi {
         $txn_ref            = null;
         try {
             $step           = 0;
-
-            // https://stripe.com/docs/webhooks/signatures has some code - if using signatures I don't think
-            // we need to check IPs
-            $ips            = $this->callback_valid_ips ();
+ /*
+https://stripe.com/docs/webhooks/signatures has some code
+If using signatures I don't think we need to check IPs
+           $ips            = $this->callback_valid_ips ();
             if (!STRIPE_DEV_MODE && !in_array($_SERVER['REMOTE_ADDR'],$ips)) {
                 throw new \Exception ('Unauthorised callback request from '.$_SERVER['REMOTE_ADDR']);
             }
-
-            Stripe::setApiKey(STRIPE_SECRET_KEY);
-
-            $postdata = file_get_contents('php://input');
-
-            $sig_header = $_SERVER['HTTP_STRIPE_SIGNATURE'];
-            $event = null;
-
+*/
+// Why is this in the local namespace? Dare say it works but I am confused...
+            Stripe::setApiKey (STRIPE_SECRET_KEY);
+            $postdata       = file_get_contents ('php://input');
+            $sig_header     = $_SERVER['HTTP_STRIPE_SIGNATURE'];
+            $event          = null;
             try {
-                $event = \Stripe\Webhook::constructEvent(
-                    $postdata, $sig_header, STRIPE_WHSEC
+                $event      = \Stripe\Webhook::constructEvent (
+                    $postdata,
+                    $sig_header,
+                    STRIPE_WHSEC
                 );
             }
             catch (\UnexpectedValueException $e) {
                 // Invalid payload
                 http_response_code (400);
-                exit();
+                exit ();
             }
+// See above - why is this is in the Stripe namespace?
             catch (\Stripe\Exception\SignatureVerificationException $e) {
                 // Invalid signature
                 http_response_code (400);
                 exit ();
             }
-            error_log (print_r($event,true));
-
-            // Data is posted JSON
-            //$event        = json_decode (trim($postdata));
-
             if (!is_object($event) || !isset($event->data->object->metadata->payment_id)) {
-                error_log(var_export($event, true));
-                error_log(var_export($event->data, true));
-                error_log(var_export($event->data, true));
+                error_log (var_export($event,true));
+                error_log (var_export($event->data,true));
+                error_log (var_export($event->data,true));
                 throw new \Exception ('Posted data is not valid');
             }
-            $payment_id      = $event->data->object->metadata->payment_id;
-            $step = 1;
-            // The payment is now recorded at this end
+            $step           = 1;
+            $payment_id     = $this->complete ($event);
+            // The payment (or lack thereof) is now recorded at this end
             http_response_code (200);
-            if ($event->type == 'charge.succeeded') {
-                $step           = 2;
-                $this->complete ($payment_id);
-                $responded      = true;
-                echo "Transaction completed\n";
-                $this->supporter = $this->supporter_add ($payment_id);
-                if (STRIPE_CMPLN_EML) {
-                    $step       = 3;
-                    $result = campaign_monitor (
-                        $this->org['signup_cm_key'],
-                        $this->org['signup_cm_id'],
-                        $this->supporter['To'],
-                        $this->supporter
-                    );
-                    $ok = $result->http_status_code == 200;
-                    if (!$ok) {
-                        throw new \Exception (print_r($result,true));
-                    }
-                }
-                if (STRIPE_CMPLN_MOB) {
-                    $step       = 4;
-                    $sms_msg  = $this->org['signup_sms_message'];
-                    foreach ($this->supporter as $k=>$v) {
-                        $sms_msg = str_replace ("{{".$k."}}",$v,$sms_msg);
-                    }
-                    sms ($this->supporter['Mobile'],$sms_msg,STRIPE_SMS_FROM);
+            $responded      = true;
+            echo "Transaction completed id={$event->data->object->metadata->payment_id}, type={$event->type}\n";
+            if (!$payment_id) {
+                return false;
+            }
+            echo "Payment received\n";
+            $step           = 2;
+            $this->supporter = $this->supporter_add ($payment_id);
+            if (STRIPE_CMPLN_EML) {
+                $step   = 3;
+                $result = campaign_monitor (
+                    $this->org['signup_cm_key'],
+                    $this->org['signup_cm_id'],
+                    $this->supporter['To'],
+                    $this->supporter
+                );
+                $ok     = $result->http_status_code == 200;
+                if (!$ok) {
+                    throw new \Exception (print_r($result,true));
                 }
             }
-            elseif ($event->type == 'charge.failed') {
-                $step           = 10;
-                $this->fail ($payment_id, $event->data->object->failure_code, $event->data->object->failure_message);
-
-                $responded      = true;
-                echo "Transaction failed\n";
-            }
-            else {
-                error_log(print_r($event->type, true));
+            if (STRIPE_CMPLN_MOB) {
+                $step   = 4;
+                $sms_msg = $this->org['signup_sms_message'];
+                foreach ($this->supporter as $k=>$v) {
+                    $sms_msg = str_replace ("{{".$k."}}",$v,$sms_msg);
+                }
+                sms ($this->supporter['Mobile'],$sms_msg,STRIPE_SMS_FROM);
             }
             return true;
         }
@@ -175,7 +163,19 @@ class PayApi {
         return $ips->WEBHOOKS;
     }
 
-    private function complete ($payment_id) {
+    private function complete ($event) {
+        if (!in_array($event->type,['charge.succeeded','charge.failed'])) {
+            error_log (print_r($event,true));
+            throw new \Exception ('Unrecognised Stripe event type');
+            return false;
+        }
+        $payment_id             = $event->data->object->metadata->payment_id;
+        $failure_code           = '';
+        $failure_message        = '';
+        if ($event->type=='charge.failed') {
+            $failure_code       = $event->data->object->failure_code;
+            $failure_message    = $event->data->object->failure_message;
+        }
         try {
             $this->connection->query (
               "
@@ -184,6 +184,8 @@ class PayApi {
                   `callback_at`=NOW()
                  ,`refno`={$this->refno($payment_id)}
                  ,`cref`='{$this->cref($payment_id)}'
+                 ,`failure_code`='{$failure_code}'
+                 ,`failure_message`='{$failure_message}'
                 WHERE `id`='$payment_id'
                 LIMIT 1
               "
@@ -194,6 +196,10 @@ class PayApi {
             throw new \Exception ('SQL error');
             return false;
         }
+        if ($event->type=='charge.failed') {
+            return false;
+        }
+        return $payment_id;
     }
 
     private function cref ($id) {
@@ -222,27 +228,6 @@ class PayApi {
             return false;
         }
         return $output;
-    }
-
-    private function fail ($payment_id,$failure_code,$failure_message) {
-        try {
-            $this->connection->query (
-              "
-                UPDATE `stripe_payment`
-                SET
-                  `callback_at`=NOW()
-                 ,`failure_code`='{$failure_code}'
-                 ,`failure_message`='{$failure_message}'
-                WHERE `id`='$payment_id'
-                LIMIT 1
-              "
-            );
-        }
-        catch (\mysqli_sql_exception $e) {
-            $this->error_log (128,'SQL update failed: '.$e->getMessage());
-            throw new \Exception ('SQL error');
-            return false;
-        }
     }
 
     public function import ($from) {
@@ -329,7 +314,7 @@ class PayApi {
     }
 
     public function start (&$e) {
-        Stripe::setApiKey(STRIPE_SECRET_KEY);
+        Stripe::setApiKey (STRIPE_SECRET_KEY);
         $v = www_signup_vars ();
         foreach ($v as $key => $val) {
             $v[$key] = $this->connection->real_escape_string ($val);
