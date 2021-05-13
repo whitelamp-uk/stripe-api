@@ -368,7 +368,14 @@ If using signatures I don't think we need to check IPs
     private function supporter_add ($payment_id) {
         try {
             $s = $this->connection->query (
-              "SELECT * FROM `stripe_payment` WHERE `id`='$payment_id' LIMIT 0,1"
+              "
+                SELECT
+                  `p`.*
+                 ,drawOnOrAfter(`p`.`created`) AS `draw_first`
+                FROM `stripe_payment` AS `p`
+                WHERE `p`.`id`='$payment_id'
+                LIMIT 0,1
+              "
             );
             $s = $s->fetch_assoc ();
             if (!$s) {
@@ -384,9 +391,7 @@ If using signatures I don't think we need to check IPs
         signup ($s,STRIPE_CODE,$s['cref']);
         // Add tickets here so that they can be emailed/texted
         $tickets            = tickets (STRIPE_CODE,$s['refno'],$s['cref'],$s['quantity']);
-        $draw_first         = new \DateTime (draw_first($s['created'],STRIPE_CODE));
-        $one_day_interval   = new \DateInterval ('P1D');
-        $draw_first->add ($one_day_interval);
+        $draw_first         = new \DateTime ($s['draw_first']);
         return [
             'To'            => $s['name_first'].' '.$s['name_last'].' <'.$s['email'].'>',
             'Title'         => $s['title'],
