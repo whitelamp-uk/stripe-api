@@ -371,6 +371,7 @@ If using signatures I don't think we need to check IPs
               "
                 SELECT
                   `p`.*
+                 ,`p`.`created` AS `first_draw_close`
                  ,drawOnOrAfter(`p`.`created`) AS `draw_first`
                 FROM `stripe_payment` AS `p`
                 WHERE `p`.`id`='$payment_id'
@@ -388,7 +389,7 @@ If using signatures I don't think we need to check IPs
             return false;
         }
         // Insert a supporter, a player and a contact
-        signup ($s,STRIPE_CODE,$s['cref']);
+        signup ($s,STRIPE_CODE,$s['cref'],$s['first_draw_close']);
         // Add tickets here so that they can be emailed/texted
         $tickets            = tickets (STRIPE_CODE,$s['refno'],$s['cref'],$s['quantity']);
         $draw_first         = new \DateTime ($s['draw_first']);
