@@ -14,6 +14,7 @@ define ( 'STRIPE_REFNO_OFFSET',     100000000   );
 define ( 'STRIPE_DESCRIPTION',      'My Org Lottery'    );
 define ( 'STRIPE_SECRET_KEY',       ''          );
 define ( 'STRIPE_PUBLIC_KEY',       ''          );
+define ( 'STRIPE_WHSEC',            ''          );
 define ( 'STRIPE_DEV_MODE',         true        );
 
 
