@@ -31,7 +31,6 @@ class PayApi {
     public   $errorCode = 0;
     private  $from;
     private  $org;
-    public   $signup_done_message = ';Thanks';
     public   $supporter = [];
 
     private  $txn_ref;
@@ -294,17 +293,6 @@ If using signatures I don't think we need to check IPs
             throw new \Exception ('SQL database error');
             return false;
         }
-        $sql                = "SELECT signup_done_message FROM blotto_config.blotto_org WHERE id = ".BLOTTO_ORG_ID;
-        try {
-            $sdm             = $this->connection->query ($sql);
-            $sdm             = $sdm->fetch_assoc ();
-            $this->signup_done_message = $sdm['signup_done_message'];
-        }
-        catch (\mysqli_sql_exception $e) {
-            $this->error_log (117,'SQL select failed: '.$e->getMessage());
-            throw new \Exception ('SQL database error');
-            return false;
-        }
     }
 
     private function sql_instantiate ($sql) {
@@ -362,6 +350,8 @@ If using signatures I don't think we need to check IPs
           // Verify your integration in this guide by including this parameter
           'metadata' => ['integration_check' => 'accept_a_payment', 'payment_id' => $newid],
         ]);
+// TODO
+$this->org['signup_done_message'];
         require __DIR__.'/form.php';
     }
 
