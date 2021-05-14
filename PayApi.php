@@ -2,8 +2,15 @@
 
 namespace Blotto\Stripe;
 
+/*
+https://www.php.net/manual/en/language.namespaces.importing.php
+"the leading backslash is unnecessary and not recommended, as import names must
+be fully qualified, and are not processed relative to the current namespace"
 use \Stripe\Stripe;
 use \Stripe\PaymentIntent;
+*/
+use Stripe\Stripe;
+use Stripe\PaymentIntent;
 
 class PayApi {
 
@@ -58,12 +65,13 @@ If using signatures I don't think we need to check IPs
                 throw new \Exception ('Unauthorised callback request from '.$_SERVER['REMOTE_ADDR']);
             }
 */
-// Why is this in the local namespace? Dare say it works but I am confused...
             Stripe::setApiKey (STRIPE_SECRET_KEY);
             $postdata       = file_get_contents ('php://input');
             $sig_header     = $_SERVER['HTTP_STRIPE_SIGNATURE'];
             $event          = null;
             try {
+// Above: use Stripe\Webhook;
+// Here: $event = Webhook::constructEvent
                 $event      = \Stripe\Webhook::constructEvent (
                     $postdata,
                     $sig_header,
@@ -75,7 +83,8 @@ If using signatures I don't think we need to check IPs
                 http_response_code (400);
                 exit ();
             }
-// See above - why is this is in the Stripe namespace?
+// Above: use Stripe\Exception\SignatureVerificationException;
+// Here: catch (SignatureVerificationException $e)
             catch (\Stripe\Exception\SignatureVerificationException $e) {
                 // Invalid signature
                 http_response_code (400);
