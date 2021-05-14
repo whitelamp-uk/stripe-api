@@ -20,7 +20,7 @@
                 <a href="" target="_blank">Stripe dashboard.</a> Refresh the page to pay again.
               </p>
               <p class="result-message hidden">
-                <?php echo $this->signup_done_message; ?>
+                <?php echo $this->org['signup_done_message']; ?>
               </p>
             </form>
 

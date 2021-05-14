@@ -350,8 +350,6 @@ If using signatures I don't think we need to check IPs
           // Verify your integration in this guide by including this parameter
           'metadata' => ['integration_check' => 'accept_a_payment', 'payment_id' => $newid],
         ]);
-// TODO
-$this->org['signup_done_message'];
         require __DIR__.'/form.php';
     }
 
