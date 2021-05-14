@@ -19,7 +19,6 @@ class PayApi {
                  'STRIPE_CODE',
                  'STRIPE_CMPLN_MOB',
                  'STRIPE_CMPLN_EML',
-                 'STRIPE_CMPLN_EML_CM_ID',
                  'STRIPE_DESCRIPTION',
                  'STRIPE_ERROR_LOG',
                  'STRIPE_REFNO_OFFSET',
@@ -284,8 +283,8 @@ If using signatures I don't think we need to check IPs
     private function setup ( ) {
         foreach ($this->constants as $c) {
             if (!defined($c)) {
-                $this->error_log (124,"$c not defined");
-                throw new \Exception ('Configuration error $c not defined');
+                $this->error_log (124,"Configuration error $c not defined");
+                throw new \Exception ("Configuration error $c not defined");
                 return false;
             }
         }
