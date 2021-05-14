@@ -4,10 +4,10 @@
 CREATE TABLE IF NOT EXISTS `stripe_payment` (
   `id` INT (11) NOT NULL AUTO_INCREMENT,
   `callback_at` datetime DEFAULT NULL,
-  `refno` bigint(20) unsigned DEFAULT NULL,
-  `cref` varchar(255) CHARACTER SET ascii DEFAULT NULL,
   `failure_code` varchar(255) CHARACTER SET ascii DEFAULT NULL,
   `failure_message` varchar(255) CHARACTER SET ascii DEFAULT NULL,
+  `refno` bigint(20) unsigned DEFAULT NULL,
+  `cref` varchar(255) CHARACTER SET ascii DEFAULT NULL,
   `quantity` tinyint(3) unsigned NOT NULL,
   `draws` tinyint(3) unsigned NOT NULL,
   `amount` decimal(10,2) DEFAULT NULL,

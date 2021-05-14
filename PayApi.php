@@ -2,8 +2,15 @@
 
 namespace Blotto\Stripe;
 
+/*
+https://www.php.net/manual/en/language.namespaces.importing.php
+"the leading backslash is unnecessary and not recommended, as import names must
+be fully qualified, and are not processed relative to the current namespace"
 use \Stripe\Stripe;
 use \Stripe\PaymentIntent;
+*/
+use Stripe\Stripe;
+use Stripe\PaymentIntent;
 
 class PayApi {
 
@@ -12,7 +19,6 @@ class PayApi {
                  'STRIPE_CODE',
                  'STRIPE_CMPLN_MOB',
                  'STRIPE_CMPLN_EML',
-                 'STRIPE_CMPLN_EML_CM_ID',
                  'STRIPE_DESCRIPTION',
                  'STRIPE_ERROR_LOG',
                  'STRIPE_REFNO_OFFSET',
@@ -31,7 +37,6 @@ class PayApi {
     public   $errorCode = 0;
     private  $from;
     private  $org;
-    public   $signup_done_message = ';Thanks';
     public   $supporter = [];
 
     private  $txn_ref;
@@ -59,12 +64,13 @@ If using signatures I don't think we need to check IPs
                 throw new \Exception ('Unauthorised callback request from '.$_SERVER['REMOTE_ADDR']);
             }
 */
-// Why is this in the local namespace? Dare say it works but I am confused...
             Stripe::setApiKey (STRIPE_SECRET_KEY);
             $postdata       = file_get_contents ('php://input');
             $sig_header     = $_SERVER['HTTP_STRIPE_SIGNATURE'];
             $event          = null;
             try {
+// Above: use Stripe\Webhook;
+// Here: $event = Webhook::constructEvent
                 $event      = \Stripe\Webhook::constructEvent (
                     $postdata,
                     $sig_header,
@@ -76,7 +82,8 @@ If using signatures I don't think we need to check IPs
                 http_response_code (400);
                 exit ();
             }
-// See above - why is this is in the Stripe namespace?
+// Above: use Stripe\Exception\SignatureVerificationException;
+// Here: catch (SignatureVerificationException $e)
             catch (\Stripe\Exception\SignatureVerificationException $e) {
                 // Invalid signature
                 http_response_code (400);
@@ -279,8 +286,8 @@ If using signatures I don't think we need to check IPs
     private function setup ( ) {
         foreach ($this->constants as $c) {
             if (!defined($c)) {
-                $this->error_log (124,"$c not defined");
-                throw new \Exception ("onfiguration error $c not defined");
+                $this->error_log (124,"Configuration error $c not defined");
+                throw new \Exception ("Configuration error $c not defined");
                 return false;
             }
         }
@@ -291,17 +298,6 @@ If using signatures I don't think we need to check IPs
             $this->database = $db['db'];
             // Create the table if not exists
             //$this->execute (__DIR__.'/create_payment_table.sql');
-        }
-        catch (\mysqli_sql_exception $e) {
-            $this->error_log (117,'SQL select failed: '.$e->getMessage());
-            throw new \Exception ('SQL database error');
-            return false;
-        }
-        $sql                = "SELECT signup_done_message FROM blotto_config.blotto_org WHERE id = ".BLOTTO_ORG_ID;
-        try {
-            $sdm             = $this->connection->query ($sql);
-            $sdm             = $sdm->fetch_assoc ();
-            $this->signup_done_message = $sdm['signup_done_message'];
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (117,'SQL select failed: '.$e->getMessage());
@@ -371,7 +367,15 @@ If using signatures I don't think we need to check IPs
     private function supporter_add ($payment_id) {
         try {
             $s = $this->connection->query (
-              "SELECT * FROM `stripe_payment` WHERE `id`='$payment_id' LIMIT 0,1"
+              "
+                SELECT
+                  `p`.*
+                 ,`p`.`created` AS `first_draw_close`
+                 ,drawOnOrAfter(`p`.`created`) AS `draw_first`
+                FROM `stripe_payment` AS `p`
+                WHERE `p`.`id`='$payment_id'
+                LIMIT 0,1
+              "
             );
             $s = $s->fetch_assoc ();
             if (!$s) {
@@ -384,12 +388,10 @@ If using signatures I don't think we need to check IPs
             return false;
         }
         // Insert a supporter, a player and a contact
-        signup ($s,STRIPE_CODE,$s['cref']);
+        signup ($s,STRIPE_CODE,$s['cref'],$s['first_draw_close']);
         // Add tickets here so that they can be emailed/texted
         $tickets            = tickets (STRIPE_CODE,$s['refno'],$s['cref'],$s['quantity']);
-        $draw_first         = new \DateTime (draw_first($s['created'],STRIPE_CODE));
-        $one_day_interval   = new \DateInterval ('P1D');
-        $draw_first->add ($one_day_interval);
+        $draw_first         = new \DateTime ($s['draw_first']);
         return [
             'To'            => $s['name_first'].' '.$s['name_last'].' <'.$s['email'].'>',
             'Title'         => $s['title'],
