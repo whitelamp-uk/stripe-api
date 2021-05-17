@@ -17,8 +17,6 @@ class PayApi {
     private  $connection;
     public   $constants = [
                  'STRIPE_CODE',
-                 'STRIPE_CMPLN_MOB',
-                 'STRIPE_CMPLN_EML',
                  'STRIPE_DESCRIPTION',
                  'STRIPE_ERROR_LOG',
                  'STRIPE_REFNO_OFFSET',
@@ -107,7 +105,7 @@ If using signatures I don't think we need to check IPs
             echo "Payment received\n";
             $step           = 2;
             $this->supporter = $this->supporter_add ($payment_id);
-            if (STRIPE_CMPLN_EML) {
+            if ($this->org['signup_paid_email']>0) {
                 $step   = 3;
                 $result = campaign_monitor (
                     $this->org['signup_cm_key'],
@@ -120,7 +118,7 @@ If using signatures I don't think we need to check IPs
                     throw new \Exception (print_r($result,true));
                 }
             }
-            if (STRIPE_CMPLN_MOB) {
+            if ($this->org['signup_paid_sms']>0) {
                 $step   = 4;
                 $sms_msg = $this->org['signup_sms_message'];
                 foreach ($this->supporter as $k=>$v) {

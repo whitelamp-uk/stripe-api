@@ -6,9 +6,6 @@ define ( 'BLOTTO_PAY_API_STRIPE_CLASS',     '\Blotto\Stripe\PayApi'         );
 define ( 'BLOTTO_PAY_API_STRIPE_BUY',       true        ); // Provide integration
 define ( 'STRIPE_INIT_FILE',        '/path/to/stripe-php-7.77.0/init.php'   );
 define ( 'STRIPE_CODE',             'STRP'      ); // CCC and Provider
-define ( 'STRIPE_CMPLN_MOB',        false       ); // Send completion message by SMS
-define ( 'STRIPE_CMPLN_EML',        true        ); // Send completion message by email
-define ( 'STRIPE_CMPLN_EML_CM_ID',  ''          );
 define ( 'STRIPE_ERROR_LOG',        false       );
 define ( 'STRIPE_REFNO_OFFSET',     100000000   );
 define ( 'STRIPE_DESCRIPTION',      'My Org Lottery'    );
@@ -20,18 +17,8 @@ define ( 'STRIPE_DEV_MODE',         true        );
 
 // Organisation - all payment providers
 define ( 'BLOTTO_DEV_MODE',         true        );
-define ( 'BLOTTO_ADMIN_EMAIL',      'help@my.biz'                           );
-define ( 'BLOTTO_ADMIN_PHONE',      '01 234 567 890'                        );
 define ( 'BLOTTO_MAX_PAYMENT',      50          );
-define ( 'BLOTTO_SIGNUP_CM_ID',     ''          ); // Verify email
-define ( 'BLOTTO_SIGNUP_PRIVACY',   'https://my.biz/privacy'                );
-define ( 'BLOTTO_SIGNUP_SMS_FROM',  ''          ); // Verify SMS
-define ( 'BLOTTO_SIGNUP_TERMS',     'https://my.biz/terms'                  );
-define ( 'BLOTTO_SIGNUP_VFY_EML',   true        ); // User must confirm email address
-define ( 'BLOTTO_SIGNUP_VFY_MOB',   false       ); // User must confirm phone number
 define ( 'CAMPAIGN_MONITOR',        '/path/to/createsend-php/csrest_transactional_smartemail.php' );
-define ( 'CAMPAIGN_MONITOR_KEY',    ''          );
-define ( 'CAMPAIGN_MONITOR_SMART_EMAIL_ID', ''  );
 define ( 'DATA8_USERNAME',          ''          );
 define ( 'DATA8_PASSWORD',          ''          );
 define ( 'DATA8_COUNTRY',           'GB'        );
