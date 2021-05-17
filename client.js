@@ -75,7 +75,7 @@ var orderComplete = function(paymentIntentId) {
       "href",
       "https://dashboard.stripe.com/test/payments/" + paymentIntentId
     );
-  document.querySelector(".result-message").classList.remove("hidden");
+  document.querySelector(".result-message-ok").classList.remove("hidden");
   document.querySelector("button").disabled = true;
 };
 
@@ -84,6 +84,7 @@ var showError = function(errorMsgText) {
   loading(false);
   var errorMsg = document.querySelector("#card-error");
   errorMsg.textContent = errorMsgText;
+  document.querySelector(".result-message-fail").classList.remove("hidden");
   setTimeout(function() {
     errorMsg.textContent = "";
   }, 4000);
@@ -96,6 +97,8 @@ var loading = function(isLoading) {
     document.querySelector("button").disabled = true;
     document.querySelector("#spinner").classList.remove("hidden");
     document.querySelector("#button-text").classList.add("hidden");
+    document.querySelector(".result-message-ok").classList.add("hidden");
+    document.querySelector(".result-message-fail").classList.add("hidden");
   } else {
     document.querySelector("button").disabled = false;
     document.querySelector("#spinner").classList.add("hidden");

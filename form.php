@@ -22,15 +22,16 @@
                 Payment succeeded, see the result in your
                 <a href="" target="_blank">Stripe dashboard.</a> Refresh the page to pay again.
               </p>
-              <p class="result-message hidden">
-<?php if (true): ?>
+
+              <div class="result-message-ok hidden">
                 <div><?php echo $this->org['signup_done_message_ok']; ?></div>
-                <div>Your payment reference is: ????</div>
-<?php else: ?>
+                <div>Your payment reference is: <?php echo $newid; ?></div>
+              </div>
+
+              <div class="result-message-fail hidden">
                 <?php echo $this->org['signup_done_message_fail']; ?>
                 <div>Click <a href="./tickets.php">here</a> to try again</div>
-<?php endif; ?>
-              </p>
+              </div>
 
             </form>
 
