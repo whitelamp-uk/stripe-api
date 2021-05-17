@@ -1,4 +1,8 @@
 
+            <style>
+<?php require __DIR__.'/client.css'; ?>
+            </style>
+
             <form id="payment-form">
 
 <?php if (defined('STRIPE_DEV_MODE') && STRIPE_DEV_MODE): ?>
@@ -18,29 +22,33 @@
               </button>
 
               <p id="card-error" role="alert"></p>
+
               <p class="old-result-message hidden">
                 Payment succeeded, see the result in your
                 <a href="" target="_blank">Stripe dashboard.</a> Refresh the page to pay again.
               </p>
 
               <div class="result-message-ok hidden">
-                <div><?php echo $this->org['signup_done_message_ok']; ?></div>
-                <div>Your payment reference is: <?php echo $newid; ?></div>
+                <p><?php echo htmlspecialchars ($this->org['signup_done_message_ok']); ?></p>
+                <div>Your payment reference is: <?php echo STRIPE_CODE.'-'.$newid; ?></div>
               </div>
 
               <div class="result-message-fail hidden">
-                <?php echo $this->org['signup_done_message_fail']; ?>
+                <p><?php echo $this->org['signup_done_message_fail']; ?></p>
                 <div>Click <a href="./tickets.php">here</a> to try again</div>
               </div>
 
             </form>
 
             <script type="text/javascript">
+
                 var stripe = Stripe('<?php echo STRIPE_PUBLIC_KEY ?>');
                 var clientSecret = "<?php echo $intent->client_secret ?>";
                 var postcode = "<?php echo $v['postcode'] ?>";
                 console.log ("in form.php postcode is " + postcode);
                 // var purchase = { items: [ {id:"xl-tshirt"} ] };
-                <?php require __DIR__.'/client.js'; ?>
+
+<?php require __DIR__.'/client.js'; ?>
+
             </script>
 
