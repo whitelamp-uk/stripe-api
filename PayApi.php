@@ -223,14 +223,17 @@ If using signatures I don't think we need to check IPs
     }
 
     private function execute ($sql_file) {
-        echo file_get_contents ($sql_file);
+        //echo file_get_contents ($sql_file);
+        $execstring = 'mariadb '.escapeshellarg($this->database).' < '.escapeshellarg($sql_file);
+        $output = null;
+        $status = null;
         exec (
-            'mariadb '.escapeshellarg($this->database).' < '.escapeshellarg($sql_file),
+            $execstring,
             $output,
             $status
         );
         if ($status>0) {
-            $this->error_log (127,$sql_file.' '.implode(' ',$output));
+            $this->error_log (127,$sql_file.' db: '.$this->database.' cmd: '.$execstring.' status: '.$status.' '.print_r($output, true));
             throw new \Exception ("SQL file '$sql_file' execution error");
             return false;
         }
