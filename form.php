@@ -13,7 +13,13 @@
                 <tr><td colspan="2"><small>For A, use UK postcode. For B &amp; C use ZIP ("12345" or similar).</small></td></tr>
               </table>
 <?php endif; ?>
-
+              <div>
+                <?php
+                $tplural = $v['quantity'] > 1 ? 's': '';
+                $wplural = $v['draws'] > 1 ? 's': '';
+                echo "Pay &pound;{$pounds_amount} for {$v['quantity']} ticket{$tplural} for {$v['draws']} week{$wplural}."
+                ?>
+              </div>
               <div id="card-element"><!--client.js injects the card element--></div>
 
               <button id="submit">
