@@ -1,6 +1,5 @@
 
             <style>
-<?php require __DIR__.'/stripe.css'; ?>
 <?php require __DIR__.'/client.css'; ?>
             </style>
 
