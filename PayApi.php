@@ -314,33 +314,40 @@ If using signatures I don't think we need to check IPs
         Stripe::setApiKey (STRIPE_SECRET_KEY);
         $v = www_signup_vars ();
         foreach ($v as $key => $val) {
+            if (preg_match('<^pref_>',$key)) {
+                $v[$key] = yes_or_no ($val,'Y','N');
+                continue;
+            }
             $v[$key] = $this->connection->real_escape_string ($val);
         }
         $amount = intval($v['quantity']) * intval($v['draws']) * BLOTTO_TICKET_PRICE;
         $pounds_amount = number_format ($amount/100,2,'.','');
-        $sql = "INSERT INTO `stripe_payment` SET
-          `quantity` = '{$v['quantity']}',
-          `draws` = '{$v['draws']}',
-          `amount` = '{$pounds_amount}',
-          `title` = '{$v['title']}',
-          `name_first` = '{$v['name_first']}',
-          `name_last` = '{$v['name_last']}',
-          `dob` = '{$v['dob']}',
-          `email` = '{$v['email']}',
-          `mobile` = '{$v['mobile']}',
-          `telephone` = '{$v['telephone']}',
-          `postcode` = '{$v['postcode']}',
-          `address_1` = '{$v['address_1']}',
-          `address_2` = '{$v['address_2']}',
-          `address_3` = '{$v['address_3']}',
-          `town` = '{$v['town']}',
-          `county` = '{$v['county']}',
-          `gdpr` = '{$v['gdpr']}',
-          `terms` = '{$v['terms']}',
-          `pref_1` = '{$v['pref_1']}',
-          `pref_2` = '{$v['pref_2']}',
-          `pref_3` = '{$v['pref_3']}',
-          `pref_4` = '{$v['pref_4']}'
+        $sql = "
+          INSERT INTO `stripe_payment`
+          SET
+            `quantity`='{$v['quantity']}'
+           ,`draws`='{$v['draws']}'
+           ,`amount`='{$pounds_amount}'
+           ,`title`='{$v['title']}'
+           ,`name_first`='{$v['name_first']}'
+           ,`name_last`='{$v['name_last']}'
+           ,`dob`='{$v['dob']}'
+           ,`email`='{$v['email']}'
+           ,`mobile`='{$v['mobile']}'
+           ,`telephone`='{$v['telephone']}'
+           ,`postcode`='{$v['postcode']}'
+           ,`address_1`='{$v['address_1']}'
+           ,`address_2`='{$v['address_2']}'
+           ,`address_3`='{$v['address_3']}'
+           ,`town`='{$v['town']}'
+           ,`county`='{$v['county']}'
+           ,`gdpr`='{$v['gdpr']}'
+           ,`terms`='{$v['terms']}'
+           ,`pref_email`='{$v['pref_email']}'
+           ,`pref_sms`='{$v['pref_sms']}'
+           ,`pref_post`='{$v['pref_post']}'
+           ,`pref_phone`='{$v['pref_phone']}'
+          ;
         ";
         try {
             $this->connection->query ($sql);
@@ -386,7 +393,7 @@ If using signatures I don't think we need to check IPs
             return false;
         }
         // Insert a supporter, a player and a contact
-        signup ($s,STRIPE_CODE,$s['cref'],$s['first_draw_close']);
+        signup ($this->org,$s,STRIPE_CODE,$s['cref'],$s['first_draw_close']);
         // Add tickets here so that they can be emailed/texted
         $tickets            = tickets (STRIPE_CODE,$s['refno'],$s['cref'],$s['quantity']);
         $draw_first         = new \DateTime ($s['draw_first']);
