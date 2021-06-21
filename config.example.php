@@ -22,7 +22,7 @@ define ( 'CAMPAIGN_MONITOR',        '/path/to/createsend-php/csrest_transactiona
 define ( 'DATA8_USERNAME',          ''          );
 define ( 'DATA8_PASSWORD',          ''          );
 define ( 'DATA8_COUNTRY',           'GB'        );
-define ( 'VOODOOSMS',               '/home/blotto/voodoosms/SMS.php' );
+define ( 'VOODOOSMS',               '/home/blotto/voodoosms/SMS.class.php' );
 
 
 // Global - Stripe
