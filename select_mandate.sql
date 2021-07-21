@@ -5,8 +5,8 @@ SELECT
  ,`refno`
  ,`cref`
  ,`created`
- ,`paid`
- ,DATE_ADD(DATE(`paid`),INTERVAL 1 DAY)
+ ,DATE(`callback_at`)
+ ,DATE_ADD(DATE(`callback_at`),INTERVAL 1 DAY)
  ,IF(LENGTH(`failure_code`)>0,'FAILED','LIVE')
  ,'Single'
  ,`amount`
