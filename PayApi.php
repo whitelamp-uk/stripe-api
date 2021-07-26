@@ -295,7 +295,7 @@ If using signatures I don't think we need to check IPs
             $db             = $db->fetch_assoc ();
             $this->database = $db['db'];
             // Create the table if not exists
-            $this->execute (__DIR__.'/create_payment.sql');
+            //$this->execute (__DIR__.'/create_payment_table.sql');
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (117,'SQL select failed: '.$e->getMessage());
