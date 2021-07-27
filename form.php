@@ -36,7 +36,7 @@
 
               <div class="result-message-ok hidden">
                 <p><?php echo htmlspecialchars ($this->org['signup_done_message_ok']); ?></p>
-                <div>Your payment reference is: <?php echo STRIPE_CODE.'-'.$newid; ?></div>
+                <div>Your payment reference is: <?php echo STRIPE_CODE.'-'.$this->refno($newid); ?></div>
               </div>
 
               <div class="result-message-fail hidden">
