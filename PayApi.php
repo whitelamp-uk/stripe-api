@@ -113,7 +113,7 @@ If using signatures I don't think we need to check IPs
                     $this->supporter['To'],
                     $this->supporter
                 );
-                $ok     = $result->http_status_code == 200;
+                $ok     = in_array ($result->http_status_code,[200,201,202]);
                 if (!$ok) {
                     throw new \Exception (print_r($result,true));
                 }
