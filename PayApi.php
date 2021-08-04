@@ -36,10 +36,13 @@ class PayApi {
     private  $from;
     private  $org;
     public   $supporter = [];
+    public   $today;
 
     private  $txn_ref;
 
     public function __construct ($connection,$org=null) {
+        // TODO: what about cut-offs and BST?
+        $this->today        = date ('Y-m-d');
         $this->connection   = $connection;
         $this->org          = $org;
         $this->setup ();
@@ -375,8 +378,6 @@ If using signatures I don't think we need to check IPs
               "
                 SELECT
                   `p`.*
-                 ,`p`.`created` AS `first_draw_close`
-                 ,drawOnOrAfter(`p`.`created`) AS `draw_first`
                 FROM `stripe_payment` AS `p`
                 WHERE `p`.`id`='$payment_id'
                 LIMIT 0,1
@@ -394,9 +395,9 @@ If using signatures I don't think we need to check IPs
         }
         // Insert a supporter, a player and a contact
         signup ($this->org,$s,STRIPE_CODE,$s['cref'],$s['first_draw_close']);
-        // Add tickets here so that they can be emailed/texted
+        // Add tickets and first draw close here so that they can be emailed/texted
         $tickets            = tickets (STRIPE_CODE,$s['refno'],$s['cref'],$s['quantity']);
-        $draw_first         = new \DateTime ($s['draw_first']);
+        $draw_first         = new \DateTime (draw_first_asap($this->today));
         return [
             'To'            => $s['name_first'].' '.$s['name_last'].' <'.$s['email'].'>',
             'Title'         => $s['title'],
