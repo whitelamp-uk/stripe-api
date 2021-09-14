@@ -11,6 +11,6 @@ Block if ::Item ID:: = 'LOTTERY-ONE-OFF-PAYMENT' and :card_funding: = 'unknown'
 Block if ::Item ID:: = 'LOTTERY-ONE-OFF-PAYMENT' and ::Customer Age:: < 18
 
 Where 'LOTTERY-ONE-OFF-PAYMENT' is an example value for the configurable
-constant STRIPE_PRODUCT_CODE
+constant STRIPE_ITEM_ID
 
 
