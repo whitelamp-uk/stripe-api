@@ -30,6 +30,7 @@ define ( 'STRIPE_TABLE_MANDATE',    'blotto_build_mandate'      );
 define ( 'STRIPE_TABLE_COLLECTION', 'blotto_build_collection'   );
 define ( 'STRIPE_CALLBACK_IPS_URL', 'https://stripe.com/files/ips/ips_webhooks.json' );
 define ( 'STRIPE_CALLBACK_IPS_TO',  30          ); // seconds before giving up getting safe IPs
+define ( 'STRIPE_PRODUCT_CODE',     'LOTTERY-ONE-OFF-PAYMENT'  ); 
 
 
 // Global - all payment providers
