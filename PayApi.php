@@ -90,12 +90,16 @@ If using signatures I don't think we need to check IPs
                 http_response_code (400);
                 exit ();
             }
-            if (!is_object($event) || !isset($event->data->object->metadata->payment_id)) {
+            if (!is_object($event) || !isset($event->data->object->metadata->payment_id) || !isset($event->data->object->metadata->product_name)) {
                 error_log (var_export($event,true));
-                error_log (var_export($event->data,true));
-                error_log (var_export($event->data,true));
                 throw new \Exception ('Posted data is not valid');
             }
+            if ($event->data->object->metadata->product_name != STRIPE_PRODUCT_NAME) {
+                error_log (var_export($event,true));
+                throw new \Exception ('Incorrect Product Name');
+                return false;
+            }
+
             $step           = 1;
             $payment_id     = $this->complete ($event);
             // The payment (or lack thereof) is now recorded at this end
@@ -365,9 +369,7 @@ If using signatures I don't think we need to check IPs
           'amount' => $amount,
           'currency' => 'gbp',
           'description' => STRIPE_DESCRIPTION,
-          // DL: The docs seem to say metadata is optional and arbitrary; poss required when doing development...
-          // Verify your integration in this guide by including this parameter
-          'metadata' => ['integration_check' => 'accept_a_payment', 'payment_id' => $newid],
+          'metadata' => ['payment_id' => $newid, 'product_name' => STRIPE_PRODUCT_NAME],
         ]);
         require __DIR__.'/form.php';
     }
