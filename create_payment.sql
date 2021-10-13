@@ -12,8 +12,8 @@ INSERT IGNORE INTO `_readme` (`project`, `location`) VALUES
 CREATE TABLE IF NOT EXISTS `stripe_payment` (
   `id` INT (11) NOT NULL AUTO_INCREMENT,
   `callback_at` datetime DEFAULT NULL,
-  `failure_code` varchar(255) CHARACTER SET ascii DEFAULT NULL,
-  `failure_message` varchar(255) CHARACTER SET ascii DEFAULT NULL,
+  `failure_code` varchar(255) CHARACTER SET ascii NOT NULL,
+  `failure_message` varchar(255) CHARACTER SET ascii NOT NULL,
   `refno` bigint(20) unsigned DEFAULT NULL,
   `cref` varchar(255) CHARACTER SET ascii DEFAULT NULL,
   `quantity` tinyint(3) unsigned NOT NULL,

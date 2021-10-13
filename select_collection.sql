@@ -9,6 +9,6 @@ SELECT
 FROM `stripe_payment`
 WHERE `created`>='{{STRIPE_FROM}}'
   AND `callback_at` IS NOT NULL
-  AND LENGTH(`failure_code`)>0
+  AND (`failure_code` IS NULL OR `failure_code`='')
 ORDER BY `id`
 ;
