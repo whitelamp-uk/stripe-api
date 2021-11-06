@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS `stripe_payment` (
   `failure_message` varchar(255) CHARACTER SET ascii NOT NULL,
   `refno` bigint(20) unsigned DEFAULT NULL,
   `cref` varchar(255) CHARACTER SET ascii DEFAULT NULL,
+  `collection_date` date NULL,
   `quantity` tinyint(3) unsigned NOT NULL,
   `draws` tinyint(3) unsigned NOT NULL,
   `amount` decimal(10,2) DEFAULT NULL,

@@ -317,9 +317,12 @@ If using signatures I don't think we need to check IPs
         return $sql;
     }
 
-    public function start (&$e) {
+    public function start (&$err) {
         Stripe::setApiKey (STRIPE_SECRET_KEY);
         $v = www_signup_vars ();
+        if (!$v['collection_date']) {
+            $v['collection_date'] = date ('Y-m-d');
+        }
         foreach ($v as $key => $val) {
             if (preg_match('<^pref_>',$key)) {
                 $v[$key] = yes_or_no ($val,'Y','N');
@@ -332,7 +335,8 @@ If using signatures I don't think we need to check IPs
         $sql = "
           INSERT INTO `stripe_payment`
           SET
-            `quantity`='{$v['quantity']}'
+            `collection_date`='{$v['collection_date']}'
+           ,`quantity`='{$v['quantity']}'
            ,`draws`='{$v['draws']}'
            ,`amount`='{$pounds_amount}'
            ,`title`='{$v['title']}'
@@ -362,7 +366,7 @@ If using signatures I don't think we need to check IPs
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (122,'SQL insert failed: '.$e->getMessage());
-            $e[] = 'Sorry something went wrong - please try later';
+            $err[] = 'Sorry something went wrong - please try later';
             return;
         }
         $intent = PaymentIntent::create([
@@ -379,15 +383,17 @@ If using signatures I don't think we need to check IPs
             $s = $this->connection->query (
               "
                 SELECT
-                  `p`.*
-                FROM `stripe_payment` AS `p`
-                WHERE `p`.`id`='$payment_id'
+                  *
+                FROM `stripe_payment`
+                WHERE `id`='$payment_id'
                 LIMIT 0,1
               "
             );
             $s = $s->fetch_assoc ();
             if (!$s) {
+                $this->error_log (122,"stripe_payment id '$payment_id' was not found");
                 throw new \Exception ("stripe_payment id '$payment_id' was not found");
+                return false;
             }
         }
         catch (\mysqli_sql_exception $e) {
@@ -395,24 +401,51 @@ If using signatures I don't think we need to check IPs
             throw new \Exception ('SQL error');
             return false;
         }
-        // Insert a supporter, a player and a contact
-        signup ($this->org,$s,STRIPE_CODE,$s['cref'],$s['first_draw_close']);
         // Add tickets and first draw close here so that they can be emailed/texted
         $tickets            = tickets (STRIPE_CODE,$s['refno'],$s['cref'],$s['quantity']);
-        $draw_first         = new \DateTime (draw_first_asap($this->today));
+        // Get first draw dates
+        if ($s['collection_date']) {
+            $draw_first     = new \DateTime (draw_first_asap($s['collection_date']));
+        }
+        else {
+            $draw_first     = new \DateTime (draw_first_asap($this->today));
+        }
+        $draw_closed        = $draw_first->format ('Y-m-d');
+        // Insert a supporter, a player and a contact
+        signup ($this->org,$s,STRIPE_CODE,$s['cref'],$draw_closed);
+        // Return "rich text" data
+        try {
+            $d = $this->connection->query (
+              "SELECT drawOnOrAfter('$draw_closed') AS `draw_date`;"
+            );
+            $d = $s->fetch_assoc ();
+            if (!$d) {
+                $this->error_log (122,'SQL failed: '.$e->getMessage());
+                throw new \Exception ("SQL function could not be run");
+                return false;
+            }
+        }
+        catch (\mysqli_sql_exception $e) {
+            $this->error_log (122,'SQL select failed: '.$e->getMessage());
+            throw new \Exception ('SQL error');
+            return false;
+        }
+        $draw_date          = new \Datetime ($d['draw_date']);
         return [
-            'To'            => $s['name_first'].' '.$s['name_last'].' <'.$s['email'].'>',
-            'Title'         => $s['title'],
-            'Name'          => $s['name_first'].' '.$s['name_last'],
-            'Email'         => $s['email'],
-            'Mobile'        => $s['mobile'],
-            'First_Name'    => $s['name_first'],
-            'Last_Name'     => $s['name_last'],
-            'Reference'     => $s['cref'],
-            'Chances'       => $s['quantity'],
-            'Tickets'       => implode (',',$tickets),
-            'Draws'         => $s['draws'],
-            'First_Draw'    => $draw_first->format ('l jS F Y')
+            'To'                => $s['name_first'].' '.$s['name_last'].' <'.$s['email'].'>',
+            'Title'             => $s['title'],
+            'Name'              => $s['name_first'].' '.$s['name_last'],
+            'Email'             => $s['email'],
+            'Mobile'            => $s['mobile'],
+            'First_Name'        => $s['name_first'],
+            'Last_Name'         => $s['name_last'],
+            'Reference'         => $s['cref'],
+            'Chances'           => $s['quantity'],
+            'Tickets'           => implode (',',$tickets),
+            'Draws'             => $s['draws'],
+            'First_Draw_Closed' => $draw_first->format ('l jS F Y'),
+            'First_Draw_Day'    => $draw_date->format ('l jS F Y'),
+            'First_Draw'        => $draw_date->format ('l jS F Y')
         ];
     }
 

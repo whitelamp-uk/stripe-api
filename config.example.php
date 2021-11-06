@@ -8,10 +8,11 @@ define ( 'STRIPE_INIT_FILE',        '/path/to/stripe-php-7.77.0/init.php'   );
 define ( 'STRIPE_CODE',             'STRP'      ); // CCC and Provider
 define ( 'STRIPE_ERROR_LOG',        false       );
 define ( 'STRIPE_REFNO_OFFSET',     100000000   );
-define ( 'STRIPE_DESCRIPTION',      'My Org Lottery'    );
+define ( 'STRIPE_DESCRIPTION',      'My Org Lottery'           );
 define ( 'STRIPE_SECRET_KEY',       ''          );
 define ( 'STRIPE_PUBLIC_KEY',       ''          );
 define ( 'STRIPE_WHSEC',            ''          );
+define ( 'STRIPE_PRODUCT_NAME',     'LOTTERY-ONE-OFF-PAYMENT'  ); 
 define ( 'STRIPE_DEV_MODE',         true        );
 
 
@@ -30,7 +31,6 @@ define ( 'STRIPE_TABLE_MANDATE',    'blotto_build_mandate'      );
 define ( 'STRIPE_TABLE_COLLECTION', 'blotto_build_collection'   );
 define ( 'STRIPE_CALLBACK_IPS_URL', 'https://stripe.com/files/ips/ips_webhooks.json' );
 define ( 'STRIPE_CALLBACK_IPS_TO',  30          ); // seconds before giving up getting safe IPs
-define ( 'STRIPE_PRODUCT_CODE',     'LOTTERY-ONE-OFF-PAYMENT'  ); 
 
 
 // Global - all payment providers
