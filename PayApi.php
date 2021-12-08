@@ -111,7 +111,10 @@ If using signatures I don't think we need to check IPs
             }
             echo "Payment received\n";
             $step           = 2;
+            echo "    Adding supporter for payment_id=$payment_id\n";
             $this->supporter = $this->supporter_add ($payment_id);
+            echo "    Supporter added = ";
+            print_r ($this->supporter);
             if ($this->org['signup_paid_email']>0) {
                 $step   = 3;
                 $result = campaign_monitor (
@@ -402,6 +405,7 @@ If using signatures I don't think we need to check IPs
             return false;
         }
         // Add tickets and first draw close here so that they can be emailed/texted
+        echo "    Adding tickets for '{$s['cref']}'\n";
         $tickets            = tickets (STRIPE_CODE,$s['refno'],$s['cref'],$s['quantity']);
         // Get first draw dates
         if ($s['collection_date']) {
@@ -412,6 +416,7 @@ If using signatures I don't think we need to check IPs
         }
         $draw_closed        = $draw_first->format ('Y-m-d');
         // Insert a supporter, a player and a contact
+        echo "    Running signup() for '{$s['cref']}'\n";
         signup ($this->org,$s,STRIPE_CODE,$s['cref'],$draw_closed);
         // Return "rich text" data
         try {
