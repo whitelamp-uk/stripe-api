@@ -423,7 +423,7 @@ If using signatures I don't think we need to check IPs
             $d = $this->connection->query (
               "SELECT drawOnOrAfter('$draw_closed') AS `draw_date`;"
             );
-            $d = $s->fetch_assoc ();
+            $d = $d->fetch_assoc ();
             if (!$d) {
                 $this->error_log (122,'SQL failed: '.$e->getMessage());
                 throw new \Exception ("SQL function could not be run");
