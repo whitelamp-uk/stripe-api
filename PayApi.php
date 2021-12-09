@@ -404,9 +404,6 @@ If using signatures I don't think we need to check IPs
             throw new \Exception ('SQL error');
             return false;
         }
-        // Add tickets and first draw close here so that they can be emailed/texted
-        echo "    Adding tickets for '{$s['cref']}'\n";
-        $tickets            = tickets (STRIPE_CODE,$s['refno'],$s['cref'],$s['quantity']);
         // Get first draw dates
         if ($s['collection_date']) {
             $draw_first     = new \DateTime (draw_first_asap($s['collection_date']));
@@ -418,6 +415,9 @@ If using signatures I don't think we need to check IPs
         // Insert a supporter, a player and a contact
         echo "    Running signup() for '{$s['cref']}'\n";
         signup ($this->org,$s,STRIPE_CODE,$s['cref'],$draw_closed);
+        // Add tickets
+        echo "    Adding tickets for '{$s['cref']}'\n";
+        $tickets            = tickets (STRIPE_CODE,$s['refno'],$s['cref'],$s['quantity']);
         // Return "rich text" data
         try {
             $d = $this->connection->query (
