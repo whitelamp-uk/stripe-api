@@ -190,8 +190,12 @@ If using signatures I don't think we need to check IPs
         if ($event->type=='charge.failed') {
             $failure_code       = $event->data->object->failure_code;
             $failure_message    = $event->data->object->failure_message;
+            error_log ("Stripe charge failed $failure_code $failure_message");
         }
+
         try {
+            $failure_code    = $this->connection->real_escape_string ($failure_code);
+            $failure_message = $this->connection->real_escape_string ($failure_message);
             $this->connection->query (
               "
                 UPDATE `stripe_payment`
