@@ -241,7 +241,7 @@ If using signatures I don't think we need to check IPs
         }
         catch (\mysqli_sql_exception $e) {
             $this->error_log (126,'SQL execute failed: '.$e->getMessage());
-            throw new \Exception ('SQL connection error');
+            throw new \Exception ('SQL execution error');
             return false;
         }
         return $result;
@@ -291,6 +291,7 @@ If using signatures I don't think we need to check IPs
     }
 
     private function setup ( ) {
+echo "DINGALING\n";
         foreach ($this->constants as $c) {
             if (!defined($c)) {
                 $this->error_log (123,"Configuration error $c not defined");
