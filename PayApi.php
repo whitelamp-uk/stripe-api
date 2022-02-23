@@ -211,7 +211,7 @@ If using signatures I don't think we need to check IPs
             );
         }
         catch (\mysqli_sql_exception $e) {
-            $this->error_log (122,'SQL update failed: '.$e->getMessage());
+            $this->error_log (127,'SQL update failed: '.$e->getMessage());
             throw new \Exception ('SQL error');
             return false;
         }
@@ -235,21 +235,16 @@ If using signatures I don't think we need to check IPs
     }
 
     private function execute ($sql_file) {
-        //echo file_get_contents ($sql_file);
-        $execstring = 'mariadb '.escapeshellarg($this->database).' < '.escapeshellarg($sql_file);
-        $output = null;
-        $status = null;
-        exec (
-            $execstring,
-            $output,
-            $status
-        );
-        if ($status>0) {
-            $this->error_log (127,$sql_file.' db: '.$this->database.' cmd: '.$execstring.' status: '.$status.' '.print_r($output, true));
-            throw new \Exception ("SQL file '$sql_file' execution error");
+        $sql = $this->sql_instantiate (file_get_contents($sql_file));
+        try {
+            $result = $this->connection->query ($sql);
+        }
+        catch (\mysqli_sql_exception $e) {
+            $this->error_log (126,'SQL execute failed: '.$e->getMessage());
+            throw new \Exception ('SQL connection error');
             return false;
         }
-        return $output;
+        return $result;
     }
 
     public function import ($from) {
@@ -269,7 +264,7 @@ If using signatures I don't think we need to check IPs
             tee ("Output {$this->connection->affected_rows} collections\n");
         }
         catch (\mysqli_sql_exception $e) {
-            $this->error_log (126,'SQL insert failed: '.$e->getMessage());
+            $this->error_log (125,'SQL insert failed: '.$e->getMessage());
             throw new \Exception ('SQL error');
             return false;
         }
@@ -285,7 +280,7 @@ If using signatures I don't think we need to check IPs
             tee ("Output {$this->connection->affected_rows} mandates\n");
         }
         catch (\mysqli_sql_exception $e) {
-            $this->error_log (125,'SQL insert failed: '.$e->getMessage());
+            $this->error_log (124,'SQL insert failed: '.$e->getMessage());
             throw new \Exception ('SQL error');
             return false;
         }
@@ -298,7 +293,7 @@ If using signatures I don't think we need to check IPs
     private function setup ( ) {
         foreach ($this->constants as $c) {
             if (!defined($c)) {
-                $this->error_log (124,"Configuration error $c not defined");
+                $this->error_log (123,"Configuration error $c not defined");
                 throw new \Exception ("Configuration error $c not defined");
                 return false;
             }
@@ -312,7 +307,7 @@ If using signatures I don't think we need to check IPs
             $this->execute (__DIR__.'/create_payment.sql');
         }
         catch (\mysqli_sql_exception $e) {
-            $this->error_log (117,'SQL select failed: '.$e->getMessage());
+            $this->error_log (122,'SQL select failed: '.$e->getMessage());
             throw new \Exception ('SQL database error');
             return false;
         }
@@ -327,8 +322,20 @@ If using signatures I don't think we need to check IPs
     public function start (&$err) {
         Stripe::setApiKey (STRIPE_SECRET_KEY);
         $v = www_signup_vars ();
-        if (!$v['collection_date']) {
-            $v['collection_date'] = date ('Y-m-d');
+        $today = date ('Y-m-d');
+        if ($v['collection_date']) {
+            $dt = new \DateTime ();
+            $dt->sub (new \DateInterval('P'.BLOTTO_INSURE_DAYS.'D'));
+            $dt = $dt->format ('Y-m-d');
+            if ($dt<$today) {
+                $v['collection_date'] = $today;
+            }
+            else {
+                $v['collection_date'] = $dt;
+            }
+        }
+        else {
+            $v['collection_date'] = $today;
         }
         foreach ($v as $key => $val) {
             if (preg_match('<^pref_>',$key)) {
@@ -372,7 +379,7 @@ If using signatures I don't think we need to check IPs
             $newid = $this->connection->insert_id;
         }
         catch (\mysqli_sql_exception $e) {
-            $this->error_log (122,'SQL insert failed: '.$e->getMessage());
+            $this->error_log (121,'SQL insert failed: '.$e->getMessage());
             $err[] = 'Sorry something went wrong - please try later';
             return;
         }
@@ -398,13 +405,13 @@ If using signatures I don't think we need to check IPs
             );
             $s = $s->fetch_assoc ();
             if (!$s) {
-                $this->error_log (122,"stripe_payment id '$payment_id' was not found");
+                $this->error_log (120,"stripe_payment id '$payment_id' was not found");
                 throw new \Exception ("stripe_payment id '$payment_id' was not found");
                 return false;
             }
         }
         catch (\mysqli_sql_exception $e) {
-            $this->error_log (122,'SQL select failed: '.$e->getMessage());
+            $this->error_log (119,'SQL select failed: '.$e->getMessage());
             throw new \Exception ('SQL error');
             return false;
         }
@@ -429,13 +436,13 @@ If using signatures I don't think we need to check IPs
             );
             $d = $d->fetch_assoc ();
             if (!$d) {
-                $this->error_log (122,'SQL failed: '.$e->getMessage());
+                $this->error_log (118,'SQL failed: '.$e->getMessage());
                 throw new \Exception ("SQL function could not be run");
                 return false;
             }
         }
         catch (\mysqli_sql_exception $e) {
-            $this->error_log (122,'SQL select failed: '.$e->getMessage());
+            $this->error_log (117,'SQL select failed: '.$e->getMessage());
             throw new \Exception ('SQL error');
             return false;
         }
