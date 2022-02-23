@@ -291,7 +291,6 @@ If using signatures I don't think we need to check IPs
     }
 
     private function setup ( ) {
-echo "DINGALING\n";
         foreach ($this->constants as $c) {
             if (!defined($c)) {
                 $this->error_log (123,"Configuration error $c not defined");
