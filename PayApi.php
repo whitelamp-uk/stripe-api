@@ -324,8 +324,10 @@ If using signatures I don't think we need to check IPs
         $v = www_signup_vars ();
         $today = date ('Y-m-d');
         if ($v['collection_date']) {
-            $dt = new \DateTime ();
-            $dt->sub (new \DateInterval('P'.BLOTTO_INSURE_DAYS.'D'));
+            $dt = new \DateTime ($v['collection_date']);
+            if (defined('BLOTTO_INSURE_DAYS') && BLOTTO_INSURE_DAYS>0) {
+                $dt->sub (new \DateInterval('P'.BLOTTO_INSURE_DAYS.'D'));
+            }
             $dt = $dt->format ('Y-m-d');
             if ($dt<$today) {
                 $v['collection_date'] = $today;
