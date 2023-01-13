@@ -117,6 +117,22 @@ If using signatures I don't think we need to check IPs
             print_r ($this->supporter);
             if ($this->org['signup_paid_email']>0) {
                 $step   = 3;
+                echo "    Sending confirmation email to supporter\n";
+                $emapi = email_api ();
+                $emapi->apiKeySet ($this->org['signup_cm_key']);
+                $emref = $emapi->send (
+                    $this->org['signup_cm_id'],
+                    $this->supporter['To'],
+                    $this->supporter
+                );
+                if ($emref) {
+                    // TODO: record this?
+                }
+                else {
+// TODO: a warning communication should be sent to administrator
+                }
+/*
+Replaced above
                 $result = campaign_monitor (
                     $this->org['signup_cm_key'],
                     $this->org['signup_cm_id'],
@@ -127,6 +143,7 @@ If using signatures I don't think we need to check IPs
                 if (!$ok) {
                     throw new \Exception (print_r($result,true));
                 }
+*/
             }
             if ($this->org['signup_paid_sms']>0) {
                 $step   = 4;
