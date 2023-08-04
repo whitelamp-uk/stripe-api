@@ -8,6 +8,7 @@ define ( 'STRIPE_INIT_FILE',        '/path/to/stripe-php-7.77.0/init.php'   );
 define ( 'STRIPE_ERROR_LOG',        false       );
 define ( 'STRIPE_REFNO_OFFSET',     100000000   );
 define ( 'STRIPE_DESCRIPTION',      'My Org Lottery'           );
+define ( 'STRIPE_FROM',             '2001-01-01'               ); // Ignore stuff before a certain dat
 define ( 'STRIPE_SECRET_KEY',       ''          );
 define ( 'STRIPE_PUBLIC_KEY',       ''          );
 define ( 'STRIPE_WHSEC',            ''          );
