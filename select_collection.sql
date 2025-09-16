@@ -6,6 +6,7 @@ SELECT
  ,`refno`
  ,`cref`
  ,`amount`
+ ,'Paid'
 FROM `stripe_payment`
 WHERE `created`>='{{STRIPE_FROM}}'
   AND `callback_at` IS NOT NULL
